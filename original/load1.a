@@ -1,0 +1,2602 @@
+; disassembled by DASM6502b v.3.1 by Marat Fayzullin
+; modified by Vossi 02/2019
+!cpu 6502
+*= $2000
+l2000:	sei
+l2001:	cld
+l2002:	ldx #$ff
+l2004:	txs
+l2005:	ldy #$02
+l2007:	lda #$00
+l2009:	sta $0000,y
+l200c:	iny
+l200d:	bne l2009
+l200f:	ldx #$02
+l2011:	stx $2f
+l2013:	inx
+l2014:	stx $01
+l2016:	lda #$60
+l2018:	sta $13
+l201a:	lda #$a5
+l201c:	sta $4a
+l201e:	sta ($12),y
+l2020:	lda ($12),y
+l2022:	cmp $4a
+l2024:	beq l202b
+l2026:	iny
+l2027:	bne l201e
+l2029:	beq l202f
+l202b:	lda #$04
+l202d:	sta $2f
+l202f:	jsr $21b0
+l2032:	ldx #$00
+l2034:	jsr $21a5
+l2037:	lda #$f0
+l2039:	ldy #$d0
+l203b:	jsr $216e
+l203e:	lda #$20
+l2040:	ldy #$d3
+l2042:	jsr $216e
+l2045:	lda #$50
+l2047:	ldy #$d5
+l2049:	jsr $216e
+l204c:	ldx #$03
+l204e:	jsr $21a5
+l2051:	lda #$30
+l2053:	ldy #$d2
+l2055:	jsr $216e
+l2058:	lda #$60
+l205a:	ldy #$d4
+l205c:	jsr $216e
+l205f:	lda #$90
+l2061:	ldy #$d6
+l2063:	jsr $216e
+l2066:	ldx #$02
+l2068:	jsr $21a5
+l206b:	lda #$e0
+l206d:	ldy #$d1
+l206f:	jsr $216e
+l2072:	lda #$10
+l2074:	ldy #$d4
+l2076:	jsr $216e
+l2079:	lda #$40
+l207b:	ldy #$d6
+l207d:	jsr $216e
+l2080:	ldx #$01
+l2082:	jsr $21a5
+l2085:	lda #$40
+l2087:	ldy #$d1
+l2089:	jsr $216e
+l208c:	lda #$70
+l208e:	ldy #$d3
+l2090:	jsr $216e
+l2093:	lda #$a0
+l2095:	ldy #$d5
+l2097:	jsr $216e
+l209a:	ldx #$00
+l209c:	jsr $2d10
+l209f:	ldx #$01
+l20a1:	jsr $2d10
+l20a4:	ldx #$02
+l20a6:	jsr $2d10
+l20a9:	ldx #$2b
+l20ab:	jsr $2d10
+l20ae:	jsr $2c60
+l20b1:	lda #$0f
+l20b3:	sta $01
+l20b5:	ldy #$00
+l20b7:	lda ($7b),y
+l20b9:	and #$fe
+l20bb:	sta ($7b),y
+l20bd:	lda #$00
+l20bf:	sta ($79),y
+l20c1:	lda ($73),y
+l20c3:	and #$80
+l20c5:	bne l20d1
+l20c7:	ldx #$0b
+l20c9:	stx $4c
+l20cb:	ldx #$03
+l20cd:	stx $4d
+l20cf:	bne l20f1
+l20d1:	ldx #$2f
+l20d3:	jsr $2d10
+l20d6:	ldx #$08
+l20d8:	stx $4c
+l20da:	ldx #$06
+l20dc:	stx $4d
+l20de:	ldx $4d
+l20e0:	jsr $2d03
+l20e3:	inc $4d
+l20e5:	dec $4c
+l20e7:	bne l20de
+l20e9:	ldx #$03
+l20eb:	stx $4c
+l20ed:	ldx #$30
+l20ef:	stx $4d
+l20f1:	ldx $4d
+l20f3:	jsr $2d03
+l20f6:	inc $4d
+l20f8:	dec $4c
+l20fa:	bne l20f1
+l20fc:	ldx #$14
+l20fe:	stx $4c
+l2100:	ldx #$17
+l2102:	stx $4d
+l2104:	ldx $4d
+l2106:	jsr $2d10
+l2109:	inc $4d
+l210b:	dec $4c
+l210d:	bne l2104
+l210f:	ldx #$0c
+l2111:	stx $4a
+l2113:	lda $32f9,x
+l2116:	sta $4c
+l2118:	lda $333a,x
+l211b:	and #$3f
+l211d:	sta $4d
+l211f:	ldx $4a
+l2121:	lda $3306,x
+l2124:	sta $5b
+l2126:	lda $3313,x
+l2129:	sta $5c
+l212b:	lda $3320,x
+l212e:	sta $5d
+l2130:	lda $332d,x
+l2133:	sta $5e
+l2135:	lda $00
+l2137:	sta $01
+l2139:	ldy $4c
+l213b:	lda ($5b),y
+l213d:	sta $12
+l213f:	lda ($5d),y
+l2141:	sta $13
+l2143:	lda #$0f
+l2145:	sta $01
+l2147:	lda $4d
+l2149:	ldy #$00
+l214b:	sta ($12),y
+l214d:	ldx $4c
+l214f:	dex
+l2150:	stx $4c
+l2152:	bpl l211f
+l2154:	ldx $4a
+l2156:	dex
+l2157:	stx $4a
+l2159:	bpl l2113
+l215b:	lda $2f
+l215d:	cmp #$04
+l215f:	beq l216b
+l2161:	ldx #$38
+l2163:	jsr $2d10
+l2166:	ldx #$37
+l2168:	jsr $2d10
+l216b:	jmp $21cb
+l216e:	sta $12
+l2170:	sty $13
+l2172:	ldx $00
+l2174:	stx $20
+l2176:	ldx #$10
+l2178:	stx $1f
+l217a:	txa
+l217b:	jsr $2c46
+l217e:	sec
+l217f:	sbc #$01
+l2181:	sta $3e
+l2183:	ldy #$04
+l2185:	lda $20
+l2187:	sta $01
+l2189:	lda ($35),y
+l218b:	dey
+l218c:	sty $3d
+l218e:	ldy $3e
+l2190:	ldx #$0f
+l2192:	stx $01
+l2194:	sta ($12),y
+l2196:	dey
+l2197:	sty $3e
+l2199:	ldy $3d
+l219b:	bpl l2185
+l219d:	ldx $1f
+l219f:	dex
+l21a0:	stx $1f
+l21a2:	bne l2183
+l21a4:	rts
+l21a5:	lda $3287,x
+l21a8:	sta $35
+l21aa:	lda $328c,x
+l21ad:	sta $36
+l21af:	rts
+l21b0:	lda #$d0
+l21b2:	sta $13
+l21b4:	ldy #$00
+l21b6:	sty $12
+l21b8:	lda #$0f
+l21ba:	sta $01
+l21bc:	lda #$20
+l21be:	ldx #$08
+l21c0:	sta ($12),y
+l21c2:	iny
+l21c3:	bne l21c0
+l21c5:	inc $13
+l21c7:	dex
+l21c8:	bne l21c0
+l21ca:	rts
+l21cb:	jsr $2ca7
+l21ce:	jsr $2c84
+l21d1:	lda #$0f
+l21d3:	sta $01
+l21d5:	jsr $2275
+l21d8:	jsr $229e
+l21db:	jsr $22f2
+l21de:	jsr $2259
+l21e1:	jsr $2259
+l21e4:	jsr $2259
+l21e7:	jsr $2259
+l21ea:	jsr $2259
+l21ed:	jsr $2259
+l21f0:	jsr $2259
+l21f3:	jsr $2259
+l21f6:	jsr $2259
+l21f9:	jsr $2259
+l21fc:	jsr $2259
+l21ff:	jsr $2259
+l2202:	jsr $2259
+l2205:	jsr $2259
+l2208:	jsr $2372
+l220b:	jsr $2592
+l220e:	jsr $2705
+l2211:	ldx #$03
+l2213:	sed
+l2214:	sec
+l2215:	lda $21,x
+l2217:	adc #$00
+l2219:	sta $21,x
+l221b:	bcc l2220
+l221d:	dex
+l221e:	bpl l2215
+l2220:	lda #$2d
+l2222:	sta $12
+l2224:	lda #$d0
+l2226:	sta $13
+l2228:	lda #$0f
+l222a:	sta $01
+l222c:	ldx #$ff
+l222e:	ldy #$00
+l2230:	inx
+l2231:	cpx #$04
+l2233:	bne l2238
+l2235:	dex
+l2236:	bne l2246
+l2238:	lda $21,x
+l223a:	beq l2230
+l223c:	and #$f0
+l223e:	beq l2246
+l2240:	jsr $2c2e
+l2243:	sta ($12),y
+l2245:	iny
+l2246:	lda $21,x
+l2248:	jsr $2c32
+l224b:	sta ($12),y
+l224d:	iny
+l224e:	inx
+l224f:	lda $21,x
+l2251:	cpx #$04
+l2253:	bne l2240
+l2255:	cld
+l2256:	jmp $21cb
+l2259:	rts
+l225a:	lda $01
+l225c:	sta $58
+l225e:	lda #$0f
+l2260:	sta $01
+l2262:	ldy #$00
+l2264:	lda #$0c
+l2266:	sta ($9f),y
+l2268:	lda $3f
+l226a:	eor #$20
+l226c:	sta ($a1),y
+l226e:	sta $3f
+l2270:	lda $58
+l2272:	sta $01
+l2274:	rts
+l2275:	ldy #$00
+l2277:	lda $01
+l2279:	sta $58
+l227b:	lda #$0f
+l227d:	sta $01
+l227f:	sta ($8f),y
+l2281:	lda #$00
+l2283:	sta ($69),y
+l2285:	lda #$fa
+l2287:	sta ($6b),y
+l2289:	lda #$40
+l228b:	sta ($61),y
+l228d:	lda #$80
+l228f:	sta ($7d),y
+l2291:	lda #$15
+l2293:	sta ($67),y
+l2295:	lda #$14
+l2297:	sta ($67),y
+l2299:	lda $58
+l229b:	sta $01
+l229d:	rts
+l229e:	ldy #$47
+l22a0:	lda #$00
+l22a2:	sta $12
+l22a4:	sta $4a
+l22a6:	lda #$33
+l22a8:	sta $13
+l22aa:	sec
+l22ab:	sbc #$20
+l22ad:	tax
+l22ae:	lda $00
+l22b0:	sta $01
+l22b2:	lda ($12),y
+l22b4:	eor $4a
+l22b6:	sta $4a
+l22b8:	dey
+l22b9:	bne l22b2
+l22bb:	dec $13
+l22bd:	dex
+l22be:	bpl l22b2
+l22c0:	lda $1d
+l22c2:	bne l22ca
+l22c4:	dec $1d
+l22c6:	lda $4a
+l22c8:	sta $1e
+l22ca:	lda $4a
+l22cc:	cmp $1e
+l22ce:	beq l22d5
+l22d0:	ldx #$2e
+l22d2:	jsr $2cf8
+l22d5:	lda $4a
+l22d7:	jsr $2c28
+l22da:	sty $4a
+l22dc:	ldy #$00
+l22de:	ldx #$2e
+l22e0:	stx $12
+l22e2:	ldx #$d7
+l22e4:	stx $13
+l22e6:	ldx #$0f
+l22e8:	stx $01
+l22ea:	sta ($12),y
+l22ec:	iny
+l22ed:	lda $4a
+l22ef:	sta ($12),y
+l22f1:	rts
+l22f2:	clv
+l22f3:	lda #$0f
+l22f5:	sta $01
+l22f7:	ldy #$00
+l22f9:	ldx #$20
+l22fb:	lda #$e0
+l22fd:	jsr $2323
+l2300:	ldy #$05
+l2302:	ldx #$20
+l2304:	lda $2f
+l2306:	cmp #$04
+l2308:	beq l230e
+l230a:	lda $a0
+l230c:	bvc l2310
+l230e:	lda #$a0
+l2310:	jsr $2323
+l2313:	ldy #$0a
+l2315:	ldx #$20
+l2317:	lda $2f
+l2319:	cmp #$04
+l231b:	beq l2321
+l231d:	lda $80
+l231f:	bvc l2323
+l2321:	lda #$80
+l2323:	sty $39
+l2325:	sta $13
+l2327:	dex
+l2328:	txa
+l2329:	clc
+l232a:	adc $13
+l232c:	sta $13
+l232e:	lda #$00
+l2330:	sta $4c
+l2332:	sta $12
+l2334:	tay
+l2335:	clc
+l2336:	lda ($12),y
+l2338:	adc $4c
+l233a:	adc #$00
+l233c:	adc #$00
+l233e:	sta $4c
+l2340:	dey
+l2341:	bne l2335
+l2343:	dec $13
+l2345:	dex
+l2346:	bpl l2335
+l2348:	lda $39
+l234a:	clc
+l234b:	adc #$a1
+l234d:	sta $5b
+l234f:	lda #$d6
+l2351:	adc #$00
+l2353:	sta $5c
+l2355:	lda $4c
+l2357:	jsr $2c28
+l235a:	sty $4a
+l235c:	ldy #$00
+l235e:	sta ($5b),y
+l2360:	iny
+l2361:	lda $4a
+l2363:	sta ($5b),y
+l2365:	rts
+l2366:	lda $4c
+l2368:	inc $13
+l236a:	cmp $13
+l236c:	beq l2371
+l236e:	jsr $2b3e
+l2371:	rts
+l2372:	sei
+l2373:	ldx #$36
+l2375:	jsr $2d10
+l2378:	jsr $2cb9
+l237b:	jsr $2c4e
+l237e:	lda #$0f
+l2380:	sta $01
+l2382:	jsr $2586
+l2385:	ldy #$00
+l2387:	lda #$00
+l2389:	sta ($9d),y
+l238b:	lda #$08
+l238d:	sta ($9b),y
+l238f:	sty $16
+l2391:	ldx #$01
+l2393:	jsr $2527
+l2396:	beq l239a
+l2398:	dec $16
+l239a:	jsr $2549
+l239d:	bne l23a1
+l239f:	dec $16
+l23a1:	ldx #$01
+l23a3:	lda #$00
+l23a5:	sta ($9b),y
+l23a7:	jsr $2527
+l23aa:	beq l23ae
+l23ac:	dec $16
+l23ae:	ldx #$01
+l23b0:	jsr $2549
+l23b3:	beq l23b7
+l23b5:	dec $16
+l23b7:	lda ($9b),y
+l23b9:	and #$fe
+l23bb:	sta ($9b),y
+l23bd:	lda #$08
+l23bf:	sta ($9d),y
+l23c1:	ldx #$02
+l23c3:	jsr $2538
+l23c6:	beq l23ca
+l23c8:	dec $16
+l23ca:	lda ($9d),y
+l23cc:	and #$fe
+l23ce:	sta ($9d),y
+l23d0:	lda #$40
+l23d2:	sta $55
+l23d4:	lda #$00
+l23d6:	sta ($9b),y
+l23d8:	sta ($9d),y
+l23da:	lda #$55
+l23dc:	sta ($87),y
+l23de:	sta ($89),y
+l23e0:	lda ($87),y
+l23e2:	cmp #$55
+l23e4:	beq l23e8
+l23e6:	dec $16
+l23e8:	lda ($89),y
+l23ea:	cmp #$55
+l23ec:	beq l23f0
+l23ee:	dec $16
+l23f0:	lda #$aa
+l23f2:	sta ($89),y
+l23f4:	sta ($87),y
+l23f6:	lda ($87),y
+l23f8:	cmp #$55
+l23fa:	beq l23fe
+l23fc:	dec $16
+l23fe:	lda ($89),y
+l2400:	cmp #$aa
+l2402:	beq l2408
+l2404:	lda #$ff
+l2406:	sta $16
+l2408:	lda #$10
+l240a:	sta ($9b),y
+l240c:	lda ($87),y
+l240e:	cmp #$aa
+l2410:	beq l2414
+l2412:	dec $16
+l2414:	lda ($89),y
+l2416:	cmp #$aa
+l2418:	beq l241c
+l241a:	dec $16
+l241c:	lda #$55
+l241e:	sta ($8b),y
+l2420:	sta ($8d),y
+l2422:	lda ($8b),y
+l2424:	cmp #$55
+l2426:	beq l242a
+l2428:	dec $16
+l242a:	lda ($8d),y
+l242c:	cmp #$55
+l242e:	beq l2432
+l2430:	dec $16
+l2432:	lda #$aa
+l2434:	sta ($8d),y
+l2436:	sta ($8b),y
+l2438:	lda ($8b),y
+l243a:	cmp #$55
+l243c:	beq l2440
+l243e:	dec $16
+l2440:	lda ($8d),y
+l2442:	cmp #$aa
+l2444:	beq l2448
+l2446:	dec $16
+l2448:	lda #$10
+l244a:	sta ($9d),y
+l244c:	lda ($8b),y
+l244e:	cmp #$aa
+l2450:	beq l2454
+l2452:	dec $16
+l2454:	lda ($8d),y
+l2456:	cmp #$aa
+l2458:	beq l245c
+l245a:	dec $16
+l245c:	lda #$09
+l245e:	sta ($9b),y
+l2460:	lda #$cc
+l2462:	sta ($87),y
+l2464:	sta ($89),y
+l2466:	lda ($87),y
+l2468:	cmp #$aa
+l246a:	bmi l246e
+l246c:	dec $16
+l246e:	lda ($89),y
+l2470:	cmp #$aa
+l2472:	beq l2476
+l2474:	dec $16
+l2476:	lda #$19
+l2478:	ldx #$00
+l247a:	sta ($9b),y
+l247c:	txa
+l247d:	sta ($9b),y
+l247f:	lda ($87),y
+l2481:	and #$fe
+l2483:	cmp #$c4
+l2485:	beq l2489
+l2487:	dec $16
+l2489:	lda ($89),y
+l248b:	cmp #$cc
+l248d:	beq l2491
+l248f:	dec $16
+l2491:	lda #$09
+l2493:	sta ($9d),y
+l2495:	lda #$cc
+l2497:	sta ($8b),y
+l2499:	sta ($8d),y
+l249b:	lda ($8b),y
+l249d:	cmp #$aa
+l249f:	bmi l24a3
+l24a1:	dec $16
+l24a3:	lda ($8d),y
+l24a5:	cmp #$aa
+l24a7:	beq l24ab
+l24a9:	dec $16
+l24ab:	lda #$19
+l24ad:	ldx #$00
+l24af:	sta ($9d),y
+l24b1:	txa
+l24b2:	sta ($9d),y
+l24b4:	lda ($8b),y
+l24b6:	and #$fe
+l24b8:	cmp #$c4
+l24ba:	beq l24be
+l24bc:	dec $16
+l24be:	lda ($8d),y
+l24c0:	cmp #$cc
+l24c2:	beq l24c6
+l24c4:	dec $16
+l24c6:	dec $55
+l24c8:	bmi l24cd
+l24ca:	jmp $23d4
+l24cd:	lda #$00
+l24cf:	sta ($89),y
+l24d1:	sta ($8d),y
+l24d3:	lda #$01
+l24d5:	sta ($8b),y
+l24d7:	lda #$08
+l24d9:	sta ($87),y
+l24db:	lda #$51
+l24dd:	sta ($9d),y
+l24df:	lda #$19
+l24e1:	sta ($9b),y
+l24e3:	tax
+l24e4:	dex
+l24e5:	bne l24e4
+l24e7:	txa
+l24e8:	sta ($9b),y
+l24ea:	sta ($9d),y
+l24ec:	lda ($8d),y
+l24ee:	beq l24f2
+l24f0:	dec $16
+l24f2:	lda ($8b),y
+l24f4:	beq l24f8
+l24f6:	dec $16
+l24f8:	lda ($89),y
+l24fa:	cmp #$00
+l24fc:	beq l2500
+l24fe:	dec $16
+l2500:	lda ($87),y
+l2502:	cmp #$08
+l2504:	beq l2508
+l2506:	dec $16
+l2508:	lda $16
+l250a:	beq l2526
+l250c:	lda #$ff
+l250e:	sta $1c
+l2510:	lda #$bf
+l2512:	sta $5b
+l2514:	lda #$d5
+l2516:	sta $5c
+l2518:	jsr $2b3e
+l251b:	lda $1b
+l251d:	ldx #$2d
+l251f:	bne l2523
+l2521:	ldx #$34
+l2523:	jsr $2d10
+l2526:	rts
+l2527:	lda #$88
+l2529:	sta ($87),y
+l252b:	sta ($89),y
+l252d:	lda ($9b),y
+l252f:	ora #$01
+l2531:	sta ($9b),y
+l2533:	jsr $257e
+l2536:	bne l2549
+l2538:	lda #$88
+l253a:	sta ($8b),y
+l253c:	sta ($8d),y
+l253e:	lda ($9d),y
+l2540:	ora #$01
+l2542:	sta ($9d),y
+l2544:	jsr $257e
+l2547:	bne l2549
+l2549:	jsr $258c
+l254c:	txa
+l254d:	sta $39
+l254f:	sta ($99),y
+l2551:	ldx #$00
+l2553:	stx $3b
+l2555:	lda ($99),y
+l2557:	bne l2567
+l2559:	inx
+l255a:	bne l2555
+l255c:	inc $3b
+l255e:	lda #$0f
+l2560:	cmp $3b
+l2562:	bpl l2555
+l2564:	ldx $3b
+l2566:	rts
+l2567:	and $39
+l2569:	cmp $39
+l256b:	beq l256f
+l256d:	dec $16
+l256f:	cpx #$db
+l2571:	beq l2575
+l2573:	dec $16
+l2575:	ldx $3b
+l2577:	cpx #$0a
+l2579:	beq l257d
+l257b:	dec $16
+l257d:	rts
+l257e:	lda #$05
+l2580:	clc
+l2581:	sbc #$01
+l2583:	bpl l2581
+l2585:	rts
+l2586:	ldy #$00
+l2588:	lda #$7f
+l258a:	sta ($99),y
+l258c:	ldy #$00
+l258e:	lda ($99),y
+l2590:	rts
+l2591:	rti
+l2592:	sei
+l2593:	ldx #$35
+l2595:	jsr $2d10
+l2598:	jsr $2c4e
+l259b:	jsr $2586
+l259e:	ldy #$00
+l25a0:	sty $16
+l25a2:	lda #$0f
+l25a4:	sta $01
+l25a6:	sty $43
+l25a8:	sty $44
+l25aa:	sty $45
+l25ac:	sty $47
+l25ae:	sty $48
+l25b0:	sty $49
+l25b2:	lda #$01
+l25b4:	sta $42
+l25b6:	sta $46
+l25b8:	lda $45
+l25ba:	sta $49
+l25bc:	jsr $2670
+l25bf:	lda $16
+l25c1:	bne l261e
+l25c3:	lda $44
+l25c5:	beq l25b8
+l25c7:	jsr $2275
+l25ca:	lda #$09
+l25cc:	sta $49
+l25ce:	lda $44
+l25d0:	sta $48
+l25d2:	jsr $2670
+l25d5:	lda $16
+l25d7:	bne l261e
+l25d9:	lda $43
+l25db:	beq l25ce
+l25dd:	jsr $2275
+l25e0:	lda #$59
+l25e2:	sta $48
+l25e4:	lda $43
+l25e6:	sta $47
+l25e8:	jsr $2670
+l25eb:	lda $16
+l25ed:	bne l261e
+l25ef:	lda $42
+l25f1:	cmp #$01
+l25f3:	beq l25e4
+l25f5:	jsr $2275
+l25f8:	lda #$59
+l25fa:	sta $47
+l25fc:	lda $42
+l25fe:	sta $46
+l2600:	jsr $2670
+l2603:	lda $16
+l2605:	bne l261e
+l2607:	lda $42
+l2609:	cmp #$01
+l260b:	bne l2613
+l260d:	lda #$81
+l260f:	sta $42
+l2611:	bne l25fc
+l2613:	cmp #$12
+l2615:	bne l25fc
+l2617:	sta $46
+l2619:	jsr $2670
+l261c:	lda $16
+l261e:	bne l2653
+l2620:	lda ($99),y
+l2622:	lda #$7f
+l2624:	sta ($99),y
+l2626:	lda #$80
+l2628:	sta ($9d),y
+l262a:	lda $42
+l262c:	sta ($95),y
+l262e:	lda $43
+l2630:	sta ($93),y
+l2632:	lda $44
+l2634:	sta ($91),y
+l2636:	lda $45
+l2638:	clc
+l2639:	adc #$01
+l263b:	sta ($8f),y
+l263d:	sty $12
+l263f:	sty $13
+l2641:	lda ($99),y
+l2643:	bne l264f
+l2645:	dec $12
+l2647:	bne l2641
+l2649:	dec $13
+l264b:	bne l2641
+l264d:	beq l2653
+l264f:	cmp #$04
+l2651:	beq l266f
+l2653:	lda #$ff
+l2655:	sta $1b
+l2657:	lda #$bf
+l2659:	sta $5b
+l265b:	lda #$d5
+l265d:	sta $5c
+l265f:	jsr $2b3e
+l2662:	lda $1c
+l2664:	bne l266f
+l2666:	ldx #$33
+l2668:	bne l266c
+l266a:	ldx #$34
+l266c:	jsr $2d10
+l266f:	rts
+l2670:	sed
+l2671:	sty $12
+l2673:	sty $13
+l2675:	sty $4b
+l2677:	lda $46
+l2679:	sta $42
+l267b:	sta ($95),y
+l267d:	lda $47
+l267f:	sta $43
+l2681:	sta ($93),y
+l2683:	lda $48
+l2685:	sta $44
+l2687:	sta ($91),y
+l2689:	lda $49
+l268b:	sta ($8f),y
+l268d:	clc
+l268e:	adc #$01
+l2690:	sta $45
+l2692:	cmp #$10
+l2694:	bne l26d5
+l2696:	sty $45
+l2698:	clc
+l2699:	lda $44
+l269b:	adc #$01
+l269d:	sta $44
+l269f:	cmp #$60
+l26a1:	bne l26d5
+l26a3:	sty $44
+l26a5:	clc
+l26a6:	lda $43
+l26a8:	adc #$01
+l26aa:	sta $43
+l26ac:	cmp #$60
+l26ae:	bne l26d5
+l26b0:	sty $43
+l26b2:	clc
+l26b3:	lda $42
+l26b5:	adc #$01
+l26b7:	sta $42
+l26b9:	and #$1f
+l26bb:	cmp #$13
+l26bd:	bne l26c7
+l26bf:	lda $42
+l26c1:	and #$81
+l26c3:	sta $42
+l26c5:	bne l26cf
+l26c7:	cmp #$12
+l26c9:	beq l26cf
+l26cb:	cmp #$01
+l26cd:	bne l26d5
+l26cf:	lda #$80
+l26d1:	eor $42
+l26d3:	sta $42
+l26d5:	lda ($8f),y
+l26d7:	cmp $49
+l26d9:	bne l26e9
+l26db:	dec $12
+l26dd:	bne l26d5
+l26df:	dec $13
+l26e1:	bne l26d5
+l26e3:	dec $4b
+l26e5:	bne l26d5
+l26e7:	beq l26ff
+l26e9:	cmp $45
+l26eb:	bne l26ff
+l26ed:	lda ($91),y
+l26ef:	cmp $44
+l26f1:	bne l26ff
+l26f3:	lda ($93),y
+l26f5:	cmp $43
+l26f7:	bne l26ff
+l26f9:	lda ($95),y
+l26fb:	cmp $42
+l26fd:	beq l2703
+l26ff:	lda #$ff
+l2701:	sta $16
+l2703:	cld
+l2704:	rts
+l2705:	ldy $2f
+l2707:	dey
+l2708:	sty $57
+l270a:	ldx $00
+l270c:	stx $31
+l270e:	dex
+l270f:	bne l2713
+l2711:	ldx $2f
+l2713:	stx $2b
+l2715:	stx $30
+l2717:	jsr $2a34
+l271a:	jsr $2a0f
+l271d:	ldx $2b
+l271f:	stx $01
+l2721:	jsr $27e5
+l2724:	ldx $2b
+l2726:	stx $31
+l2728:	dex
+l2729:	bne l272d
+l272b:	ldx $2f
+l272d:	stx $2b
+l272f:	dec $57
+l2731:	bne l2713
+l2733:	ldx $31
+l2735:	stx $2b
+l2737:	jsr $2a0f
+l273a:	ldy $2f
+l273c:	dey
+l273d:	sty $57
+l273f:	ldx $00
+l2741:	stx $30
+l2743:	stx $2b
+l2745:	dex
+l2746:	bne l274a
+l2748:	ldx $2f
+l274a:	lda $16,x
+l274c:	beq l2760
+l274e:	dex
+l274f:	bne l2753
+l2751:	ldx $2f
+l2753:	dec $57
+l2755:	bne l274a
+l2757:	ldx $2b
+l2759:	stx $31
+l275b:	jsr $2a0f
+l275e:	bne l279f
+l2760:	stx $56
+l2762:	txa
+l2763:	ldx #$00
+l2765:	ldy #$00
+l2767:	jsr $2c1f
+l276a:	lda $00
+l276c:	jsr $2c16
+l276f:	ldx #$33
+l2771:	inx
+l2772:	jsr $2bad
+l2775:	beq l277b
+l2777:	ldx $56
+l2779:	bpl l274e
+l277b:	ldy $00
+l277d:	ldx $56
+l277f:	stx $00
+l2781:	nop
+l2782:	nop
+l2783:	nop
+l2784:	nop
+l2785:	sty $2b
+l2787:	ldx $00
+l2789:	stx $31
+l278b:	jsr $2a0f
+l278e:	jsr $2a34
+l2791:	ldx $2b
+l2793:	stx $01
+l2795:	jsr $27e5
+l2798:	ldx $2b
+l279a:	stx $31
+l279c:	jsr $2a0f
+l279f:	jsr $27a3
+l27a2:	rts
+l27a3:	ldx #$2c
+l27a5:	jsr $2d10
+l27a8:	lda #$0f
+l27aa:	sta $01
+l27ac:	ldy #$02
+l27ae:	ldx #$00
+l27b0:	lda #$08
+l27b2:	jsr $27ea
+l27b5:	lda $00
+l27b7:	ldx #$d0
+l27b9:	ldy #$00
+l27bb:	jsr $2c1f
+l27be:	lda #$0f
+l27c0:	jsr $2c16
+l27c3:	ldx #$08
+l27c5:	jsr $2bad
+l27c8:	lda #$d8
+l27ca:	ldy #$00
+l27cc:	ldx #$d0
+l27ce:	jsr $27ea
+l27d1:	lda #$0f
+l27d3:	ldx #$d0
+l27d5:	ldy #$00
+l27d7:	jsr $2c1f
+l27da:	lda $00
+l27dc:	jsr $2c16
+l27df:	ldx #$08
+l27e1:	jsr $2bad
+l27e4:	rts
+l27e5:	lda #$00
+l27e7:	tax
+l27e8:	ldy #$02
+l27ea:	sty $41
+l27ec:	stx $40
+l27ee:	sta $25
+l27f0:	dey
+l27f1:	sty $26
+l27f3:	lda #$00
+l27f5:	sta $12
+l27f7:	lda $01
+l27f9:	cmp #$0f
+l27fb:	beq l2805
+l27fd:	jsr $2275
+l2800:	ldx #$0e
+l2802:	jsr $2d10
+l2805:	ldy $41
+l2807:	lda $40
+l2809:	sta $13
+l280b:	tya
+l280c:	sta $4c
+l280e:	sta ($12),y
+l2810:	lda ($12),y
+l2812:	eor $4c
+l2814:	beq l2819
+l2816:	jsr $2a59
+l2819:	iny
+l281a:	bne l280b
+l281c:	inc $13
+l281e:	lda $13
+l2820:	cmp $25
+l2822:	bne l280b
+l2824:	ldx #$0f
+l2826:	jsr $2b7e
+l2829:	tya
+l282a:	sta $4c
+l282c:	lda ($12),y
+l282e:	eor $4c
+l2830:	beq l2835
+l2832:	jsr $2a59
+l2835:	lda $13
+l2837:	sta ($12),y
+l2839:	lda ($12),y
+l283b:	eor $13
+l283d:	beq l2842
+l283f:	jsr $2a59
+l2842:	iny
+l2843:	bne l2829
+l2845:	inc $13
+l2847:	lda $13
+l2849:	cmp $25
+l284b:	bne l2829
+l284d:	ldx #$10
+l284f:	jsr $2b7e
+l2852:	lda #$55
+l2854:	sta $4c
+l2856:	lda #$aa
+l2858:	sta $4d
+l285a:	lda ($12),y
+l285c:	eor $13
+l285e:	beq l2863
+l2860:	jsr $2a59
+l2863:	lda #$55
+l2865:	sta ($12),y
+l2867:	lda ($12),y
+l2869:	eor $4c
+l286b:	beq l2870
+l286d:	jsr $2a59
+l2870:	iny
+l2871:	lda ($12),y
+l2873:	eor $13
+l2875:	beq l287a
+l2877:	jsr $2a59
+l287a:	lda #$aa
+l287c:	sta ($12),y
+l287e:	lda ($12),y
+l2880:	eor $4d
+l2882:	beq l2887
+l2884:	jsr $2a59
+l2887:	iny
+l2888:	bne l285a
+l288a:	inc $13
+l288c:	lda $13
+l288e:	cmp $25
+l2890:	bne l285a
+l2892:	ldx #$11
+l2894:	jsr $2b7e
+l2897:	lda ($12),y
+l2899:	eor $4c
+l289b:	beq l28a0
+l289d:	jsr $2a59
+l28a0:	lda #$aa
+l28a2:	sta ($12),y
+l28a4:	lda ($12),y
+l28a6:	eor $4d
+l28a8:	beq l28ad
+l28aa:	jsr $2a59
+l28ad:	iny
+l28ae:	lda ($12),y
+l28b0:	eor $4d
+l28b2:	beq l28b7
+l28b4:	jsr $2a59
+l28b7:	lda #$55
+l28b9:	sta ($12),y
+l28bb:	lda ($12),y
+l28bd:	eor $4c
+l28bf:	beq l28c4
+l28c1:	jsr $2a59
+l28c4:	iny
+l28c5:	bne l2897
+l28c7:	inc $13
+l28c9:	lda $13
+l28cb:	cmp $25
+l28cd:	bne l2897
+l28cf:	ldx #$12
+l28d1:	jsr $2b7e
+l28d4:	ldx #$5a
+l28d6:	stx $4e
+l28d8:	lda ($12),y
+l28da:	eor $4d
+l28dc:	beq l28e1
+l28de:	jsr $2a59
+l28e1:	txa
+l28e2:	sta ($12),y
+l28e4:	lda ($12),y
+l28e6:	eor $4e
+l28e8:	beq l28ed
+l28ea:	jsr $2a59
+l28ed:	iny
+l28ee:	lda ($12),y
+l28f0:	eor $4c
+l28f2:	beq l28f7
+l28f4:	jsr $2a59
+l28f7:	txa
+l28f8:	sta ($12),y
+l28fa:	lda ($12),y
+l28fc:	eor $4e
+l28fe:	beq l2903
+l2900:	jsr $2a59
+l2903:	iny
+l2904:	bne l28d8
+l2906:	inc $13
+l2908:	lda $13
+l290a:	cmp $25
+l290c:	bne l28d8
+l290e:	jsr $2275
+l2911:	ldx #$13
+l2913:	jsr $2b95
+l2916:	ldx #$5a
+l2918:	stx $4c
+l291a:	ldx #$a5
+l291c:	stx $4d
+l291e:	lda ($12),y
+l2920:	eor $4c
+l2922:	beq l2927
+l2924:	jsr $2a59
+l2927:	txa
+l2928:	sta ($12),y
+l292a:	lda ($12),y
+l292c:	eor $4d
+l292e:	beq l2933
+l2930:	jsr $2a59
+l2933:	dey
+l2934:	cpy #$ff
+l2936:	bne l291e
+l2938:	dec $13
+l293a:	lda $13
+l293c:	cmp $40
+l293e:	bne l291e
+l2940:	lda ($12),y
+l2942:	eor $4c
+l2944:	beq l2949
+l2946:	jsr $2a59
+l2949:	txa
+l294a:	sta ($12),y
+l294c:	lda ($12),y
+l294e:	eor $4d
+l2950:	beq l2955
+l2952:	jsr $2a59
+l2955:	dey
+l2956:	cpy $26
+l2958:	bne l2940
+l295a:	ldx #$14
+l295c:	jsr $2b95
+l295f:	ldx #$5a
+l2961:	lda ($12),y
+l2963:	eor $4d
+l2965:	beq l296a
+l2967:	jsr $2a59
+l296a:	txa
+l296b:	sta ($12),y
+l296d:	lda ($12),y
+l296f:	eor $4c
+l2971:	beq l2976
+l2973:	jsr $2a59
+l2976:	dey
+l2977:	cpy #$ff
+l2979:	bne l2961
+l297b:	dec $13
+l297d:	lda $13
+l297f:	cmp $40
+l2981:	bne l2961
+l2983:	lda ($12),y
+l2985:	eor $4d
+l2987:	beq l298c
+l2989:	jsr $2a59
+l298c:	txa
+l298d:	sta ($12),y
+l298f:	lda ($12),y
+l2991:	eor $4c
+l2993:	beq l2998
+l2995:	jsr $2a59
+l2998:	dey
+l2999:	cpy $26
+l299b:	bne l2983
+l299d:	ldx #$15
+l299f:	jsr $2b7e
+l29a2:	ldx #$ff
+l29a4:	stx $4e
+l29a6:	lda ($12),y
+l29a8:	eor $4c
+l29aa:	beq l29af
+l29ac:	jsr $2a59
+l29af:	txa
+l29b0:	sta ($12),y
+l29b2:	lda ($12),y
+l29b4:	eor $4e
+l29b6:	beq l29bb
+l29b8:	jsr $2a59
+l29bb:	iny
+l29bc:	bne l29a6
+l29be:	inc $13
+l29c0:	lda $13
+l29c2:	cmp $25
+l29c4:	bne l29a6
+l29c6:	ldx #$16
+l29c8:	jsr $2b95
+l29cb:	ldx #$00
+l29cd:	stx $4c
+l29cf:	ldx #$ff
+l29d1:	stx $4d
+l29d3:	txa
+l29d4:	lda ($12),y
+l29d6:	eor $4d
+l29d8:	beq l29dd
+l29da:	jsr $2a59
+l29dd:	sta ($12),y
+l29df:	lda ($12),y
+l29e1:	eor $4c
+l29e3:	beq l29e8
+l29e5:	jsr $2a59
+l29e8:	dey
+l29e9:	cpy #$ff
+l29eb:	bne l29d3
+l29ed:	dec $13
+l29ef:	lda $13
+l29f1:	cmp $40
+l29f3:	bne l29d3
+l29f5:	txa
+l29f6:	lda ($12),y
+l29f8:	eor $4d
+l29fa:	beq l29ff
+l29fc:	jsr $2a59
+l29ff:	sta ($12),y
+l2a01:	lda ($12),y
+l2a03:	eor $4c
+l2a05:	beq l2a0a
+l2a07:	jsr $2a59
+l2a0a:	dey
+l2a0b:	cpy $26
+l2a0d:	bne l29f5
+l2a0f:	lda #$30
+l2a11:	sta $12
+l2a13:	lda #$d7
+l2a15:	sta $13
+l2a17:	ldx #$0f
+l2a19:	stx $01
+l2a1b:	ldx $2b
+l2a1d:	dex
+l2a1e:	txa
+l2a1f:	jsr $2c40
+l2a22:	tay
+l2a23:	lda #$2a
+l2a25:	sta ($12),y
+l2a27:	ldx $31
+l2a29:	dex
+l2a2a:	txa
+l2a2b:	jsr $2c40
+l2a2e:	tay
+l2a2f:	lda #$20
+l2a31:	sta ($12),y
+l2a33:	rts
+l2a34:	lda #$80
+l2a36:	sta $12
+l2a38:	lda #$d7
+l2a3a:	sta $13
+l2a3c:	ldx #$0f
+l2a3e:	stx $01
+l2a40:	ldx $00
+l2a42:	dex
+l2a43:	txa
+l2a44:	jsr $2c40
+l2a47:	tay
+l2a48:	lda #$2a
+l2a4a:	sta ($12),y
+l2a4c:	ldx $30
+l2a4e:	dex
+l2a4f:	txa
+l2a50:	jsr $2c40
+l2a53:	tay
+l2a54:	lda #$20
+l2a56:	sta ($12),y
+l2a58:	rts
+l2a59:	clv
+l2a5a:	sta $27
+l2a5c:	stx $28
+l2a5e:	sty $29
+l2a60:	jsr $2c28
+l2a63:	ldx $01
+l2a65:	stx $58
+l2a67:	cpx #$0f
+l2a69:	bne l2a6f
+l2a6b:	ldx $00
+l2a6d:	bne l2a71
+l2a6f:	ldx #$0f
+l2a71:	stx $01
+l2a73:	sty $4a
+l2a75:	ldy #$00
+l2a77:	ldx #$e0
+l2a79:	stx $5b
+l2a7b:	ldx #$d6
+l2a7d:	stx $5c
+l2a7f:	sta ($5b),y
+l2a81:	iny
+l2a82:	lda $4a
+l2a84:	sta ($5b),y
+l2a86:	lda $58
+l2a88:	jsr $2c28
+l2a8b:	tya
+l2a8c:	ldy #$03
+l2a8e:	sta ($5b),y
+l2a90:	lda $13
+l2a92:	jsr $2c28
+l2a95:	sty $4a
+l2a97:	ldy #$05
+l2a99:	sta ($5b),y
+l2a9b:	iny
+l2a9c:	lda $4a
+l2a9e:	sta ($5b),y
+l2aa0:	lda $29
+l2aa2:	jsr $2c28
+l2aa5:	sty $4a
+l2aa7:	ldy #$07
+l2aa9:	sta ($5b),y
+l2aab:	iny
+l2aac:	lda $4a
+l2aae:	sta ($5b),y
+l2ab0:	lda $00
+l2ab2:	jsr $2c28
+l2ab5:	tya
+l2ab6:	ldy #$0b
+l2ab8:	sta ($5b),y
+l2aba:	ldy $58
+l2abc:	cpy #$0f
+l2abe:	beq l2b1c
+l2ac0:	dey
+l2ac1:	lda #$ff
+l2ac3:	sta $0017,y
+l2ac6:	tya
+l2ac7:	jsr $2c40
+l2aca:	tay
+l2acb:	lda #$31
+l2acd:	sta $5b
+l2acf:	lda #$d7
+l2ad1:	sta $5c
+l2ad3:	lda ($5b),y
+l2ad5:	bmi l2ae3
+l2ad7:	ldx #$13
+l2ad9:	lda ($5b),y
+l2adb:	ora #$80
+l2add:	sta ($5b),y
+l2adf:	iny
+l2ae0:	dex
+l2ae1:	bne l2ad9
+l2ae3:	ldy $58
+l2ae5:	dey
+l2ae6:	lda $3103,y
+l2ae9:	sta $5b
+l2aeb:	lda $3107,y
+l2aee:	sta $5c
+l2af0:	ldx #$08
+l2af2:	stx $56
+l2af4:	lda $27
+l2af6:	clc
+l2af7:	rol
+l2af8:	sta $27
+l2afa:	bcc l2aff
+l2afc:	jsr $2b3e
+l2aff:	lda #$05
+l2b01:	clc
+l2b02:	adc $5b
+l2b04:	sta $5b
+l2b06:	bcc l2b0a
+l2b08:	inc $5c
+l2b0a:	ldx $56
+l2b0c:	dex
+l2b0d:	stx $56
+l2b0f:	bne l2af4
+l2b11:	ldx $58
+l2b13:	stx $01
+l2b15:	ldx $28
+l2b17:	ldy $29
+l2b19:	lda #$00
+l2b1b:	rts
+l2b1c:	lda $13
+l2b1e:	and #$f0
+l2b20:	bne l2b2f
+l2b22:	lda #$a1
+l2b24:	sta $5b
+l2b26:	lda #$d5
+l2b28:	sta $5c
+l2b2a:	jsr $2b3e
+l2b2d:	bmi l2b11
+l2b2f:	lda #$a6
+l2b31:	sta $5b
+l2b33:	lda #$d5
+l2b35:	sta $5c
+l2b37:	lda $00
+l2b39:	jsr $2b40
+l2b3c:	bmi l2b11
+l2b3e:	lda #$0f
+l2b40:	sta $01
+l2b42:	tya
+l2b43:	pha
+l2b44:	ldy #$00
+l2b46:	lda ($5b),y
+l2b48:	bmi l2b7b
+l2b4a:	lda $5b
+l2b4c:	sta $5d
+l2b4e:	lda $5c
+l2b50:	sta $5e
+l2b52:	ldx #$02
+l2b54:	ldy #$02
+l2b56:	lda ($5d),y
+l2b58:	ora #$80
+l2b5a:	sta ($5d),y
+l2b5c:	dey
+l2b5d:	bpl l2b56
+l2b5f:	lda #$50
+l2b61:	clc
+l2b62:	adc $5d
+l2b64:	sta $5d
+l2b66:	bcc l2b6a
+l2b68:	inc $5e
+l2b6a:	dex
+l2b6b:	bne l2b54
+l2b6d:	ldy #$02
+l2b6f:	lda $3284,y
+l2b72:	and #$3f
+l2b74:	ora #$80
+l2b76:	sta ($5d),y
+l2b78:	dey
+l2b79:	bpl l2b6f
+l2b7b:	pla
+l2b7c:	tay
+l2b7d:	rts
+l2b7e:	stx $50
+l2b80:	lda $01
+l2b82:	cmp #$0f
+l2b84:	beq l2b8e
+l2b86:	jsr $225a
+l2b89:	ldx $50
+l2b8b:	jsr $2d10
+l2b8e:	ldy $41
+l2b90:	lda $40
+l2b92:	sta $13
+l2b94:	rts
+l2b95:	stx $50
+l2b97:	lda $01
+l2b99:	cmp #$0f
+l2b9b:	beq l2ba5
+l2b9d:	jsr $225a
+l2ba0:	ldx $50
+l2ba2:	jsr $2d10
+l2ba5:	ldy $25
+l2ba7:	dey
+l2ba8:	sty $13
+l2baa:	ldy #$ff
+l2bac:	rts
+l2bad:	stx $34
+l2baf:	stx $4a
+l2bb1:	ldx $01
+l2bb3:	stx $58
+l2bb5:	ldy #$00
+l2bb7:	cpy $2d
+l2bb9:	bne l2bbd
+l2bbb:	ldy #$02
+l2bbd:	sty $3d
+l2bbf:	ldx $31
+l2bc1:	stx $01
+l2bc3:	lda ($32),y
+l2bc5:	ldx $2b
+l2bc7:	stx $01
+l2bc9:	sta ($2c),y
+l2bcb:	iny
+l2bcc:	bne l2bbf
+l2bce:	inc $33
+l2bd0:	inc $2d
+l2bd2:	dec $34
+l2bd4:	bne l2bbf
+l2bd6:	lda $4a
+l2bd8:	sta $34
+l2bda:	lda #$00
+l2bdc:	sta $11
+l2bde:	ldy $3d
+l2be0:	lda $4d
+l2be2:	ora $2c
+l2be4:	bne l2be8
+l2be6:	ldy #$12
+l2be8:	lda $4c
+l2bea:	sta $33
+l2bec:	lda $4d
+l2bee:	sta $2d
+l2bf0:	ldx $31
+l2bf2:	stx $01
+l2bf4:	lda ($32),y
+l2bf6:	sta $10
+l2bf8:	ldx $2b
+l2bfa:	stx $01
+l2bfc:	lda ($2c),y
+l2bfe:	eor $10
+l2c00:	ora $11
+l2c02:	sta $11
+l2c04:	iny
+l2c05:	bne l2bf0
+l2c07:	inc $33
+l2c09:	inc $2d
+l2c0b:	dec $34
+l2c0d:	bne l2bf0
+l2c0f:	ldx $58
+l2c11:	stx $01
+l2c13:	lda $11
+l2c15:	rts
+l2c16:	sta $31
+l2c18:	stx $33
+l2c1a:	stx $4c
+l2c1c:	sty $32
+l2c1e:	rts
+l2c1f:	sta $2b
+l2c21:	stx $2d
+l2c23:	stx $4d
+l2c25:	sty $2c
+l2c27:	rts
+l2c28:	pha
+l2c29:	jsr $2c32
+l2c2c:	tay
+l2c2d:	pla
+l2c2e:	lsr
+l2c2f:	lsr
+l2c30:	lsr
+l2c31:	lsr
+l2c32:	and #$0f
+l2c34:	cmp #$0a
+l2c36:	bmi l2c3d
+l2c38:	sec
+l2c39:	sbc #$09
+l2c3b:	bne l2c3f
+l2c3d:	ora #$30
+l2c3f:	rts
+l2c40:	jsr $2c46
+l2c43:	asl
+l2c44:	asl
+l2c45:	rts
+l2c46:	clc
+l2c47:	sta $4a
+l2c49:	asl
+l2c4a:	asl
+l2c4b:	adc $4a
+l2c4d:	rts
+l2c4e:	lda #$7f
+l2c50:	sta $12
+l2c52:	lda #$00
+l2c54:	sta $13
+l2c56:	lda #$a2
+l2c58:	ldx #$2f
+l2c5a:	ldy #$1f
+l2c5c:	jsr $2ce8
+l2c5f:	rts
+l2c60:	lda #$6f
+l2c62:	sta $12
+l2c64:	lda #$00
+l2c66:	sta $13
+l2c68:	lda #$da
+l2c6a:	ldx #$2f
+l2c6c:	ldy #$0f
+l2c6e:	jsr $2ce8
+l2c71:	rts
+l2c72:	lda #$5f
+l2c74:	sta $12
+l2c76:	lda #$00
+l2c78:	sta $13
+l2c7a:	lda #$ca
+l2c7c:	ldx #$2f
+l2c7e:	ldy #$0f
+l2c80:	jsr $2ce8
+l2c83:	rts
+l2c84:	lda #$00
+l2c86:	sta $9f
+l2c88:	lda #$d8
+l2c8a:	sta $a0
+l2c8c:	lda #$01
+l2c8e:	sta $a1
+l2c90:	lda #$d8
+l2c92:	sta $a2
+l2c94:	rts
+l2c95:	lda #$a3
+l2c97:	sta $12
+l2c99:	lda #$00
+l2c9b:	sta $13
+l2c9d:	lda #$c2
+l2c9f:	ldx #$2f
+l2ca1:	ldy #$07
+l2ca3:	jsr $2ce8
+l2ca6:	rts
+l2ca7:	lda #$5f
+l2ca9:	sta $12
+l2cab:	lda #$00
+l2cad:	sta $13
+l2caf:	lda #$68
+l2cb1:	ldx #$2f
+l2cb3:	ldy #$39
+l2cb5:	jsr $2ce8
+l2cb8:	rts
+l2cb9:	lda #$f0
+l2cbb:	sta $fffa
+l2cbe:	lda #$00
+l2cc0:	sta $fffb
+l2cc3:	lda #$f2
+l2cc5:	sta $fffc
+l2cc8:	lda #$00
+l2cca:	sta $fffd
+l2ccd:	lda #$f4
+l2ccf:	sta $fffe
+l2cd2:	lda #$00
+l2cd4:	sta $ffff
+l2cd7:	lda #$91
+l2cd9:	sta $f0
+l2cdb:	sta $f2
+l2cdd:	sta $f4
+l2cdf:	lda #$25
+l2ce1:	sta $f1
+l2ce3:	sta $f3
+l2ce5:	sta $f5
+l2ce7:	rts
+l2ce8:	sta $5b
+l2cea:	stx $5c
+l2cec:	lda $00
+l2cee:	sta $01
+l2cf0:	lda ($5b),y
+l2cf2:	sta ($12),y
+l2cf4:	dey
+l2cf5:	bpl l2cf0
+l2cf7:	rts
+l2cf8:	pha
+l2cf9:	tya
+l2cfa:	pha
+l2cfb:	txa
+l2cfc:	pha
+l2cfd:	lda #$80
+l2cff:	sta $55
+l2d01:	bne l2d19
+l2d03:	pha
+l2d04:	tya
+l2d05:	pha
+l2d06:	txa
+l2d07:	pha
+l2d08:	lda #$00
+l2d0a:	sta $55
+l2d0c:	lda #$ff
+l2d0e:	bne l2d1b
+l2d10:	pha
+l2d11:	tya
+l2d12:	pha
+l2d13:	txa
+l2d14:	pha
+l2d15:	lda #$00
+l2d17:	sta $55
+l2d19:	lda #$3f
+l2d1b:	sta $2a
+l2d1d:	lda $01
+l2d1f:	sta $58
+l2d21:	lda $3153,x
+l2d24:	tay
+l2d25:	lda $318c,x
+l2d28:	sta $37
+l2d2a:	lda $31c5,x
+l2d2d:	sta $38
+l2d2f:	lda $31fe,x
+l2d32:	sta $14
+l2d34:	lda $3237,x
+l2d37:	sta $15
+l2d39:	ldx #$0f
+l2d3b:	lda $00
+l2d3d:	sta $01
+l2d3f:	lda ($37),y
+l2d41:	and $2a
+l2d43:	ora $55
+l2d45:	stx $01
+l2d47:	sta ($14),y
+l2d49:	dey
+l2d4a:	bpl l2d3b
+l2d4c:	lda $58
+l2d4e:	sta $01
+l2d50:	pla
+l2d51:	tax
+l2d52:	pla
+l2d53:	tay
+l2d54:	pla
+l2d55:	rts
+l2d56:	pha
+l2d57:	eor #$47
+l2d59:	pha
+l2d5a:	eor $3320,x
+l2d5d:	!byte $37
+l2d5e:	eor $205d,x
+l2d61:	!byte $34
+l2d62:	and $5d,x
+l2d64:	eor $3520,x
+l2d67:	bmi l2dc6
+l2d69:	eor $3520,x
+l2d6c:	and $5d5d,y
+l2d6f:	jsr $3736
+l2d72:	eor $205d,x
+l2d75:	!byte $37
+l2d76:	rol $5d,x
+l2d78:	eor $3820,x
+l2d7b:	and $5d,x
+l2d7d:	eor $3820,x
+l2d80:	and $5d5d,y
+l2d83:	jsr $3833
+l2d86:	eor $205d,x
+l2d89:	!byte $34
+l2d8a:	rol $5d,x
+l2d8c:	eor $3520,x
+l2d8f:	and ($5d),y
+l2d91:	eor $3620,x
+l2d94:	bmi l2df3
+l2d96:	eor $3620,x
+l2d99:	sec
+l2d9a:	eor $205d,x
+l2d9d:	!byte $37
+l2d9e:	!byte $37
+l2d9f:	eor $205d,x
+l2da2:	sec
+l2da3:	rol $5d,x
+l2da5:	eor $3920,x
+l2da8:	bmi l2e07
+l2daa:	eor $3320,x
+l2dad:	and $5d5d,y
+l2db0:	jsr $3734
+l2db3:	eor $205d,x
+l2db6:	and $32,x
+l2db8:	eor $205d,x
+l2dbb:	rol $31,x
+l2dbd:	eor $205d,x
+l2dc0:	rol $39,x
+l2dc2:	eor $205d,x
+l2dc5:	!byte $37
+l2dc6:	sec
+l2dc7:	eor $205d,x
+l2dca:	sec
+l2dcb:	!byte $37
+l2dcc:	eor $205d,x
+l2dcf:	and $5d31,y
+l2dd2:	eor $3420,x
+l2dd5:	bmi l2e34
+l2dd7:	eor $3420,x
+l2dda:	sec
+l2ddb:	eor $205d,x
+l2dde:	and $33,x
+l2de0:	eor $205d,x
+l2de3:	and $5d33,y
+l2de6:	eor $3720,x
+l2de9:	bmi l2e48
+l2deb:	eor $3720,x
+l2dee:	and $5d5d,y
+l2df1:	jsr $3838
+l2df4:	eor $205d,x
+l2df7:	and $5d32,y
+l2dfa:	eor $2020,x
+l2dfd:	and $5d5d,y
+l2e00:	jsr $3932
+l2e03:	eor $205d,x
+l2e06:	jsr $5d20
+l2e09:	eor $3120,x
+l2e0c:	!byte $37
+l2e0d:	eor $205d,x
+l2e10:	and ($33),y
+l2e12:	eor $205d,x
+l2e15:	and ($32),y
+l2e17:	eor $205d,x
+l2e1a:	and ($31),y
+l2e1c:	eor $205d,x
+l2e1f:	jsr $5d38
+l2e22:	eor $2020,x
+l2e25:	and $5d,x
+l2e27:	eor $2020,x
+l2e2a:	!byte $34
+l2e2b:	eor $205d,x
+l2e2e:	and ($30),y
+l2e30:	eor $205d,x
+l2e33:	jsr $5d36
+l2e36:	eor $2020,x
+l2e39:	!byte $37
+l2e3a:	eor $205d,x
+l2e3d:	jsr $5d32
+l2e40:	eor $2020,x
+l2e43:	and ($5d),y
+l2e45:	eor $3820,x
+l2e48:	!byte $34
+l2e49:	eor $4243,x
+l2e4c:	eor $492d
+l2e4f:	eor #$20
+l2e51:	jsr $2020
+l2e54:	jmp $574f
+l2e57:	jsr $5250
+l2e5a:	!byte $4f
+l2e5b:	lsr $49
+l2e5d:	jmp $2045
+l2e60:	jsr $3920
+l2e63:	!byte $37
+l2e64:	bmi l2e97
+l2e66:	!byte $34
+l2e67:	sec
+l2e68:	rol $2e41
+l2e6b:	rol $20,x
+l2e6d:	jsr $4320
+l2e70:	eor $4c43,y
+l2e73:	eor $53
+l2e75:	!byte $3a
+l2e76:	jsr $5d30
+l2e79:	jsr $3937
+l2e7c:	eor $205d,x
+l2e7f:	!byte $37
+l2e80:	sec
+l2e81:	eor $205d,x
+l2e84:	!byte $37
+l2e85:	!byte $37
+l2e86:	eor $205d,x
+l2e89:	!byte $37
+l2e8a:	rol $5d,x
+l2e8c:	eor $3720,x
+l2e8f:	and $5d,x
+l2e91:	eor $3720,x
+l2e94:	!byte $34
+l2e95:	eor $205d,x
+l2e98:	!byte $37
+l2e99:	!byte $33
+l2e9a:	eor $205d,x
+l2e9d:	!byte $37
+l2e9e:	!byte $32
+l2e9f:	eor $205d,x
+l2ea2:	!byte $37
+l2ea3:	and ($5d),y
+l2ea5:	eor $3720,x
+l2ea8:	bmi l2f07
+l2eaa:	eor $3620,x
+l2ead:	and $5d5d,y
+l2eb0:	jsr $3836
+l2eb3:	eor $205d,x
+l2eb6:	rol $37,x
+l2eb8:	eor $205d,x
+l2ebb:	rol $36,x
+l2ebd:	eor $205d,x
+l2ec0:	rol $35,x
+l2ec2:	eor $205d,x
+l2ec5:	rol $34,x
+l2ec7:	eor $205d,x
+l2eca:	and $32,x
+l2ecc:	eor $205d,x
+l2ecf:	and $31,x
+l2ed1:	eor $205d,x
+l2ed4:	and $30,x
+l2ed6:	eor $205d,x
+l2ed9:	!byte $34
+l2eda:	and $5d5d,y
+l2edd:	jsr $3834
+l2ee0:	eor $205d,x
+l2ee3:	!byte $34
+l2ee4:	!byte $37
+l2ee5:	eor $205d,x
+l2ee8:	!byte $34
+l2ee9:	rol $5d,x
+l2eeb:	eor $3420,x
+l2eee:	and $5d,x
+l2ef0:	eor $3320,x
+l2ef3:	rol $5d,x
+l2ef5:	eor $3320,x
+l2ef8:	and $5d,x
+l2efa:	eor $3320,x
+l2efd:	!byte $34
+l2efe:	eor $205d,x
+l2f01:	!byte $33
+l2f02:	!byte $33
+l2f03:	eor $205d,x
+l2f06:	!byte $33
+l2f07:	!byte $32
+l2f08:	eor $205d,x
+l2f0b:	!byte $33
+l2f0c:	and ($5d),y
+l2f0e:	eor $3320,x
+l2f11:	bmi l2f70
+l2f13:	eor $3220,x
+l2f16:	and $5d5d,y
+l2f19:	jsr $3835
+l2f1c:	eor $205d,x
+l2f1f:	!byte $32
+l2f20:	rol $5d,x
+l2f22:	eor $2020,x
+l2f25:	jsr $5d5d
+l2f28:	jsr $3136
+l2f2b:	eor $205d,x
+l2f2e:	rol $30,x
+l2f30:	eor $205d,x
+l2f33:	and $39,x
+l2f35:	eor $205d,x
+l2f38:	jsr $5d31
+l2f3b:	eor $2020,x
+l2f3e:	!byte $32
+l2f3f:	eor $205d,x
+l2f42:	jsr $5d33
+l2f45:	eor $2020,x
+l2f48:	!byte $34
+l2f49:	eor $205d,x
+l2f4c:	jsr $5d37
+l2f4f:	eor $3120,x
+l2f52:	bmi l2fb1
+l2f54:	eor $3120,x
+l2f57:	and $5d,x
+l2f59:	eor $3120,x
+l2f5c:	rol $5d,x
+l2f5e:	eor $3120,x
+l2f61:	!byte $37
+l2f62:	eor $205d,x
+l2f65:	!byte $32
+l2f66:	sec
+l2f67:	eor $da00,x
+l2f6a:	ora ($da,x)
+l2f6c:	!byte $02
+l2f6d:	!byte $da
+l2f6e:	!byte $03
+l2f6f:	!byte $da
+l2f70:	!byte $04
+l2f71:	!byte $da
+l2f72:	ora $da
+l2f74:	asl $da
+l2f76:	!byte $07
+l2f77:	!byte $da
+l2f78:	php
+l2f79:	!byte $da
+l2f7a:	ora #$da
+l2f7c:	asl
+l2f7d:	!byte $da
+l2f7e:	!byte $0b
+l2f7f:	!byte $da
+l2f80:	!byte $0c
+l2f81:	!byte $da
+l2f82:	ora $0eda
+l2f85:	!byte $da
+l2f86:	!byte $0f
+l2f87:	!byte $da
+l2f88:	bpl l2f64
+l2f8a:	ora ($da),y
+l2f8c:	!byte $12
+l2f8d:	!byte $da
+l2f8e:	!byte $13
+l2f8f:	!byte $da
+l2f90:	!byte $14
+l2f91:	!byte $da
+l2f92:	ora $da,x
+l2f94:	asl $da,x
+l2f96:	!byte $17
+l2f97:	!byte $da
+l2f98:	clc
+l2f99:	!byte $da
+l2f9a:	ora $1ada,y
+l2f9d:	!byte $da
+l2f9e:	!byte $1b
+l2f9f:	!byte $da
+l2fa0:	!byte $1c
+l2fa1:	!byte $da
+l2fa2:	brk
+l2fa3:	!byte $dc
+l2fa4:	ora ($dc,x)
+l2fa6:	!byte $02
+l2fa7:	!byte $dc
+l2fa8:	!byte $03
+l2fa9:	!byte $dc
+l2faa:	!byte $04
+l2fab:	!byte $dc
+l2fac:	ora $dc
+l2fae:	asl $dc
+l2fb0:	!byte $07
+l2fb1:	!byte $dc
+l2fb2:	php
+l2fb3:	!byte $dc
+l2fb4:	ora #$dc
+l2fb6:	asl
+l2fb7:	!byte $dc
+l2fb8:	!byte $0b
+l2fb9:	!byte $dc
+l2fba:	!byte $0c
+l2fbb:	!byte $dc
+l2fbc:	ora $0edc
+l2fbf:	!byte $dc
+l2fc0:	!byte $0f
+l2fc1:	!byte $dc
+l2fc2:	brk
+l2fc3:	cmp $dd01,x
+l2fc6:	!byte $02
+l2fc7:	cmp $dd03,x
+l2fca:	brk
+l2fcb:	dec $de01,x
+l2fce:	!byte $02
+l2fcf:	dec $de03,x
+l2fd2:	!byte $04
+l2fd3:	dec $de05,x
+l2fd6:	asl $de
+l2fd8:	!byte $07
+l2fd9:	dec $df00,x
+l2fdc:	ora ($df,x)
+l2fde:	!byte $02
+l2fdf:	!byte $df
+l2fe0:	!byte $03
+l2fe1:	!byte $df
+l2fe2:	!byte $04
+l2fe3:	!byte $df
+l2fe4:	ora $df
+l2fe6:	asl $df
+l2fe8:	!byte $07
+l2fe9:	!byte $df
+l2fea:	!byte $52
+l2feb:	eor ($4d,x)
+l2fed:	jsr $4553
+l2ff0:	!byte $47
+l2ff1:	jsr $4624
+l2ff4:	!byte $52
+l2ff5:	!byte $4f
+l2ff6:	eor $2053
+l2ff9:	!byte $53
+l2ffa:	eor $47
+l2ffc:	jsr $4624
+l2fff:	jmp $204f
+l3002:	eor ($44,x)
+l3004:	!byte $52
+l3005:	jsr $5942
+l3008:	!byte $54
+l3009:	eor $20
+l300b:	!byte $54
+l300c:	eor $53
+l300e:	!byte $54
+l300f:	jsr $4948
+l3012:	jsr $4441
+l3015:	!byte $52
+l3016:	jsr $5942
+l3019:	!byte $54
+l301a:	eor $20
+l301c:	!byte $54
+l301d:	eor $53
+l301f:	!byte $54
+l3020:	jsr $4843
+l3023:	!byte $4b
+l3024:	!byte $52
+l3025:	!byte $42
+l3026:	!byte $52
+l3027:	!byte $44
+l3028:	jsr $3524
+l302b:	and $2c,x
+l302d:	jsr $4124
+l3030:	eor ($20,x)
+l3032:	eor ($41,x)
+l3034:	bit $2420
+l3037:	and $35,x
+l3039:	jsr $414d
+l303c:	!byte $52
+l303d:	!byte $43
+l303e:	pha
+l303f:	jsr $4e49
+l3042:	!byte $43
+l3043:	jsr $4441
+l3046:	!byte $52
+l3047:	jsr $3524
+l304a:	eor ($20,x)
+l304c:	!byte $44
+l304d:	eor $43
+l304f:	jsr $4441
+l3052:	!byte $52
+l3053:	jsr $4124
+l3056:	and $20,x
+l3058:	and $41,x
+l305a:	jsr $4e49
+l305d:	!byte $43
+l305e:	jsr $4441
+l3061:	!byte $52
+l3062:	jsr $4624
+l3065:	lsr $20
+l3067:	!byte $44
+l3068:	eor $43
+l306a:	jsr $4441
+l306d:	!byte $52
+l306e:	jsr $3024
+l3071:	bmi l3093
+l3073:	!byte $53
+l3074:	!byte $54
+l3075:	eor ($54,x)
+l3077:	eor #$43
+l3079:	jsr $4152
+l307c:	eor $5420
+l307f:	eor $53
+l3081:	!byte $54
+l3082:	!byte $53
+l3083:	jsr $3620
+l3086:	and $32,x
+l3088:	rol $20,x
+l308a:	!byte $54
+l308b:	!byte $4f
+l308c:	!byte $44
+l308d:	jsr $4554
+l3090:	!byte $53
+l3091:	!byte $54
+l3092:	!byte $53
+l3093:	jsr $2020
+l3096:	jsr $3536
+l3099:	!byte $32
+l309a:	rol $20,x
+l309c:	!byte $54
+l309d:	eor #$4d
+l309f:	eor $52
+l30a1:	!byte $53
+l30a2:	jsr $4554
+l30a5:	!byte $53
+l30a6:	!byte $54
+l30a7:	!byte $53
+l30a8:	jsr $4d54
+l30ab:	!byte $52
+l30ac:	!byte $54
+l30ad:	!byte $4f
+l30ae:	!byte $44
+l30af:	!byte $54
+l30b0:	lsr $3654
+l30b3:	and $32,x
+l30b5:	rol $20,x
+l30b7:	rol $35,x
+l30b9:	!byte $32
+l30ba:	and $20,x
+l30bc:	!byte $67
+l30bd:	and ($36),y
+l30bf:	bmi l30e1
+l30c1:	!byte $67
+l30c2:	and ($36),y
+l30c4:	and ($20),y
+l30c6:	rol $38,x
+l30c8:	!byte $34
+l30c9:	and $20,x
+l30cb:	rol $35,x
+l30cd:	sec
+l30ce:	and ($20),y
+l30d0:	rol $35,x
+l30d2:	and $31,x
+l30d4:	jsr $3431
+l30d7:	sec
+l30d8:	and $3120,y
+l30db:	!byte $34
+l30dc:	sec
+l30dd:	sec
+l30de:	jsr $3536
+l30e1:	!byte $32
+l30e2:	and $2a,x
+l30e4:	and $2d2d
+l30e7:	and $2d2d
+l30ea:	and $2d2d
+l30ed:	and $2a2d
+l30f0:	!byte $53
+l30f1:	eor $47
+l30f3:	eor $4e45
+l30f6:	!byte $54
+l30f7:	!byte $3a
+l30f8:	!byte $54
+l30f9:	eor $53
+l30fb:	!byte $54
+l30fc:	eor $58
+l30fe:	eor $43
+l3100:	eor $54,x
+l3102:	eor $41
+l3104:	adc #$71
+l3106:	sta $d1d1,y
+l3109:	!byte $d3
+l310a:	!byte $d3
+l310b:	jsr $202a
+l310e:	rol
+l310f:	jsr $4220
+l3112:	eor ($44,x)
+l3114:	jsr $5250
+l3117:	!byte $4f
+l3118:	!byte $47
+l3119:	!byte $52
+l311a:	eor ($4d,x)
+l311c:	jsr $4843
+l311f:	eor $43
+l3121:	!byte $4b
+l3122:	!byte $53
+l3123:	eor $4d,x
+l3125:	jsr $2a20
+l3128:	jsr $202a
+l312b:	jsr $2a2a
+l312e:	rol
+l312f:	rol
+l3130:	rol
+l3131:	rol
+l3132:	rol
+l3133:	rol
+l3134:	rol
+l3135:	rol
+l3136:	rol
+l3137:	rol
+l3138:	rol
+l3139:	jsr $4e20
+l313c:	!byte $4f
+l313d:	jsr $4152
+l3140:	eor $2020
+l3143:	rol
+l3144:	rol
+l3145:	rol
+l3146:	rol
+l3147:	rol
+l3148:	rol
+l3149:	rol
+l314a:	rol
+l314b:	rol
+l314c:	rol
+l314d:	rol
+l314e:	rol
+l314f:	rol
+l3150:	rol
+l3151:	rol
+l3152:	jsr $092d
+l3155:	asl
+l3156:	!byte $4f
+l3157:	!byte $4f
+l3158:	!byte $4f
+l3159:	!byte $0b
+l315a:	!byte $0b
+l315b:	!byte $0b
+l315c:	!byte $0b
+l315d:	!byte $0b
+l315e:	!byte $0b
+l315f:	!byte $0b
+l3160:	!byte $0b
+l3161:	bpl l3173
+l3163:	bpl l316c
+l3165:	ora ($0b),y
+l3167:	!byte $02
+l3168:	!byte $0b
+l3169:	!byte $0b
+l316a:	!byte $07
+l316b:	!byte $07
+l316c:	!byte $07
+l316d:	!byte $07
+l316e:	!byte $07
+l316f:	!byte $07
+l3170:	!byte $07
+l3171:	!byte $07
+l3172:	!byte $07
+l3173:	!byte $07
+l3174:	!byte $07
+l3175:	!byte $07
+l3176:	asl $06
+l3178:	asl $06
+l317a:	!byte $03
+l317b:	!byte $03
+l317c:	!byte $03
+l317d:	!byte $03
+l317e:	bmi l3191
+l3180:	!byte $02
+l3181:	!byte $1f
+l3182:	!byte $03
+l3183:	!byte $4f
+l3184:	!byte $4f
+l3185:	!byte $4f
+l3186:	!byte $02
+l3187:	!byte $02
+l3188:	ora ($11),y
+l318a:	!byte $27
+l318b:	!byte $27
+l318c:	lsr
+l318d:	nop
+l318e:	!byte $f4
+l318f:	sei
+l3190:	iny
+l3191:	clc
+l3192:	!byte $e3
+l3193:	!byte $e3
+l3194:	!byte $e3
+l3195:	!byte $e3
+l3196:	cpx $e4
+l3198:	cpx $e4
+l319a:	!byte $ff
+l319b:	bpl l31be
+l319d:	!byte $32
+l319e:	!byte $3a
+l319f:	jmp $5b58
+l31a2:	!byte $67
+l31a3:	beq l3195
+l31a5:	beq l3197
+l31a7:	beq l3199
+l31a9:	beq l319b
+l31ab:	beq l319d
+l31ad:	beq l319f
+l31af:	!byte $fc
+l31b0:	!byte $fc
+l31b1:	!byte $fc
+l31b2:	!byte $fc
+l31b3:	sed
+l31b4:	sed
+l31b5:	sed
+l31b6:	sed
+l31b7:	!byte $b2
+l31b8:	!byte $73
+l31b9:	lda #$0b
+l31bb:	lsr $5a,x
+l31bd:	tax
+l31be:	!byte $fa
+l31bf:	ldy $85af
+l31c2:	!byte $97
+l31c3:	!byte $2b
+l31c4:	!byte $2b
+l31c5:	rol $2f2f
+l31c8:	rol $2f2e
+l31cb:	bmi l31fd
+l31cd:	bmi l31ff
+l31cf:	bmi l3201
+l31d1:	bmi l3203
+l31d3:	!byte $2f
+l31d4:	bmi l3206
+l31d6:	bmi l3208
+l31d8:	bmi l320a
+l31da:	bmi l320c
+l31dc:	bmi l320e
+l31de:	bmi l3210
+l31e0:	bmi l3212
+l31e2:	bmi l3214
+l31e4:	bmi l3216
+l31e6:	bmi l3218
+l31e8:	bmi l321a
+l31ea:	bmi l321c
+l31ec:	bmi l321e
+l31ee:	bmi l3220
+l31f0:	bmi l3222
+l31f2:	bmi l3225
+l31f4:	and $2d2d
+l31f7:	and $3030
+l31fa:	bmi l322c
+l31fc:	and ($31),y
+l31fe:	brk
+l31ff:	brk
+l3200:	ora ($90),y
+l3202:	cpy #$f0
+l3204:	ldx #$ca
+l3206:	!byte $d2
+l3207:	!byte $fa
+l3208:	tsx
+l3209:	!byte $e2
+l320a:	nop
+l320b:	!byte $12
+l320c:	!byte $37
+l320d:	!byte $37
+l320e:	!byte $37
+l320f:	rti
+l3210:	!byte $37
+l3211:	and $3d46,x
+l3214:	and $d7af,x
+l3217:	!byte $df
+l3218:	!byte $07
+l3219:	!byte $3a
+l321a:	lsr $7662
+l321d:	txa
+l321e:	!byte $9e
+l321f:	!byte $b2
+l3220:	dec $82
+l3222:	stx $aa,y
+l3224:	ldx $4632,y
+l3227:	!byte $5a
+l3228:	ror $371f
+l322b:	!byte $af
+l322c:	php
+l322d:	ora #$90
+l322f:	cpy #$f0
+l3231:	!byte $af
+l3232:	!byte $af
+l3233:	!byte $37
+l3234:	!byte $37
+l3235:	jsr $d048
+l3238:	cmp $d5,x
+l323a:	cmp ($d3),y
+l323c:	cmp $d0,x
+l323e:	bne l3212
+l3240:	!byte $d2
+l3241:	bne l3213
+l3243:	!byte $d2
+l3244:	!byte $d3
+l3245:	bne l3217
+l3247:	bne l3219
+l3249:	bne l321b
+l324b:	bne l321d
+l324d:	bne l321f
+l324f:	bne l3223
+l3251:	!byte $d3
+l3252:	!byte $d7
+l3253:	!byte $d7
+l3254:	!byte $d7
+l3255:	!byte $d7
+l3256:	!byte $d7
+l3257:	!byte $d7
+l3258:	!byte $d7
+l3259:	!byte $d7
+l325a:	!byte $d7
+l325b:	!byte $d7
+l325c:	!byte $d7
+l325d:	!byte $d7
+l325e:	!byte $d7
+l325f:	!byte $d7
+l3260:	!byte $d7
+l3261:	!byte $d7
+l3262:	cmp $d0,x
+l3264:	dec $d7,x
+l3266:	bne l3239
+l3268:	!byte $d3
+l3269:	cmp $d6,x
+l326b:	dec $d0,x
+l326d:	bne l3242
+l326f:	!byte $d3
+l3270:	bvs l32b2
+l3272:	rts
+l3273:	rti
+l3274:	ror $205d
+l3277:	jsr $5d15
+l327a:	eor $0f20,x
+l327d:	!byte $0b
+l327e:	eor $406d,x
+l3281:	rti
+l3282:	rti
+l3283:	adc $4142,x
+l3286:	!byte $44
+l3287:	bvs l32fe
+l3289:	!byte $7a
+l328a:	!byte $7f
+l328b:	sty $32
+l328d:	!byte $32
+l328e:	!byte $32
+l328f:	!byte $32
+l3290:	!byte $32
+l3291:	ora $3d,x
+l3293:	eor $6d
+l3295:	!byte $52
+l3296:	cmp ($d1),y
+l3298:	!byte $d3
+l3299:	!byte $d3
+l329a:	cmp $b8,x
+l329c:	bpl l32d6
+l329e:	rti
+l329f:	pla
+l32a0:	!byte $42
+l32a1:	!byte $92
+l32a2:	bne l3275
+l32a4:	cmp ($d3),y
+l32a6:	!byte $d3
+l32a7:	!byte $d7
+l32a8:	!byte $d7
+l32a9:	cpx #$0b
+l32ab:	!byte $33
+l32ac:	!byte $3b
+l32ad:	!byte $63
+l32ae:	lsr $a6,x
+l32b0:	bne l3283
+l32b2:	cmp ($d3),y
+l32b4:	!byte $d3
+l32b5:	!byte $d7
+l32b6:	!byte $d7
+l32b7:	asl $2e
+l32b9:	inx
+l32ba:	rol $5e,x
+l32bc:	ror
+l32bd:	tsx
+l32be:	cmp ($d1),y
+l32c0:	!byte $d2
+l32c1:	!byte $d3
+l32c2:	!byte $d3
+l32c3:	!byte $d7
+l32c4:	!byte $d7
+l32c5:	ora ($29,x)
+l32c7:	bpl l32fa
+l32c9:	eor $ce7e,y
+l32cc:	cmp ($d1),y
+l32ce:	!byte $d3
+l32cf:	!byte $d3
+l32d0:	!byte $d3
+l32d1:	!byte $d7
+l32d2:	!byte $d7
+l32d3:	!byte $fc
+l32d4:	bit $2c
+l32d6:	!byte $54
+l32d7:	bne l32aa
+l32d9:	!byte $d3
+l32da:	!byte $d3
+l32db:	!byte $f7
+l32dc:	!byte $1f
+l32dd:	!byte $27
+l32de:	!byte $4f
+l32df:	bne l32b2
+l32e1:	!byte $d3
+l32e2:	!byte $d3
+l32e3:	!byte $f2
+l32e4:	!byte $1a
+l32e5:	!byte $22
+l32e6:	lsr
+l32e7:	bne l32ba
+l32e9:	!byte $d3
+l32ea:	!byte $d3
+l32eb:	!byte $6b
+l32ec:	cmp $66,x
+l32ee:	cmp $57,x
+l32f0:	cmp $61,x
+l32f2:	cmp $ad,x
+l32f4:	jmp $d54d
+l32f7:	dec $d6,x
+l32f9:	!byte $04
+l32fa:	asl $06
+l32fc:	asl $06
+l32fe:	!byte $03
+l32ff:	!byte $03
+l3300:	!byte $03
+l3301:	brk
+l3302:	brk
+l3303:	brk
+l3304:	brk
+l3305:	!byte $02
+l3306:	sta ($9b),y
+l3308:	lda #$b7
+l330a:	cmp $d3
+l330c:	!byte $db
+l330d:	!byte $e3
+l330e:	!byte $eb
+l330f:	sbc $f1ef
+l3312:	!byte $f3
+l3313:	!byte $32
+l3314:	!byte $32
+l3315:	!byte $32
+l3316:	!byte $32
+l3317:	!byte $32
+l3318:	!byte $32
+l3319:	!byte $32
+l331a:	!byte $32
+l331b:	!byte $32
+l331c:	!byte $32
+l331d:	!byte $32
+l331e:	!byte $32
+l331f:	!byte $32
+l3320:	stx $a2,y
+l3322:	bcs l32e2
+l3324:	cpy $dfd7
+l3327:	!byte $e7
+l3328:	cpx $f0ee
+l332b:	!byte $f2
+l332c:	inc $32,x
+l332e:	!byte $32
+l332f:	!byte $32
+l3330:	!byte $32
+l3331:	!byte $32
+l3332:	!byte $32
+l3333:	!byte $32
+l3334:	!byte $32
+l3335:	!byte $32
+l3336:	!byte $32
+l3337:	!byte $32
+l3338:	!byte $32
+l3339:	!byte $32
+l333a:	bmi l336d
+l333c:	!byte $32
+l333d:	!byte $33
+l333e:	!byte $34
+l333f:	and $36,x
+l3341:	!byte $37
+l3342:	sec
+l3343:	eor ($44,x)
+l3345:	eor $20
+l3347:	tax
+l3348:	tax
+l3349:	tax
+l334a:	tax
+l334b:	tax
+l334c:	tax
+l334d:	tax
+l334e:	tax
+l334f:	tax
