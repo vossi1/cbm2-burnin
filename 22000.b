@@ -1,16 +1,19 @@
 ; CBMII b128-256 burnin 
 ; disassembled by vossi 10/2023
 !cpu 6502
+!ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
 ; ***************************************** CONSTANTS *********************************************
 SYSTEMBANK		= $0f		; #SYSTEMBANK
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
-;!addr ScreenRAM		= $d000		; Screen RAM
+!addr ScreenRAM		= $d000		; Screen RAM
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
+!addr actual_codebank	= $20		; actual code bank
 !addr banks		= $2f		; RAM banks
+!addr pointer2		= $35		; 16bit pointer
 ; ******************************************* CODE ************************************************
 *= $2000
 	sei
@@ -39,51 +42,52 @@ chkbklp:sta (pointer1),y
 	beq cbm128			; no RAM from $6000 to $60ff
 cbm256:	lda #$04
 	sta banks			; store 4 banks
-cbm128:	jsr l21b0
-	ldx #$00
-	jsr l21a5
+cbm128:	jsr clrscrn			; sub: clear screen
+	ldx #0
+	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$f0
 	ldy #$d0
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$20
 	ldy #$d3
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 l2045:	lda #$50
 	ldy #$d5
-	jsr l216e
-	ldx #$03
-	jsr l21a5
+	jsr drawics			; sub: draw chip graphics to screen
+	ldx #3
+	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$30
 l2053:	ldy #$d2
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$60
 	ldy #$d4
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$90
 	ldy #$d6
-	jsr l216e
-	ldx #$02
-	jsr l21a5
+	jsr drawics			; sub: draw chip graphics to screen
+	ldx #2
+	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$e0
 	ldy #$d1
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$10
 	ldy #$d4
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$40
 	ldy #$d6
-	jsr l216e
-	ldx #$01
-	jsr l21a5
+	jsr drawics			; sub: draw chip graphics to screen
+	ldx #1
+	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$40
 	ldy #$d1
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$70
 	ldy #$d3
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
 	lda #$a0
 	ldy #$d5
-	jsr l216e
+	jsr drawics			; sub: draw chip graphics to screen
+
 	ldx #$00
 	jsr l2d10
 	ldx #$01
@@ -182,56 +186,64 @@ l211f:	ldx $4a
 	ldx #$37
 	jsr l2d10
 l216b:	jmp l21cb
-l216e:	sta pointer1
+; ----------------------------------------------------------------------------
+; draw chip graphics to screen
+drawics:sta pointer1
 	sty pointer1+1
 	ldx CodeBank
-	stx $20
+	stx actual_codebank		; remember code bank
 	ldx #$10
 	stx $1f
 	txa
-	jsr l2c46
+	jsr mul5			; sub a x5
 	sec
 	sbc #$01
 	sta $3e
-l2183:	ldy #$04
-l2185:	lda $20
-	sta IndirectBank
-	lda ($35),y
+wrsclp2:ldy #$04
+wrsclp1:lda actual_codebank
+	sta IndirectBank		; set indirect bank to actual codebank
+	lda (pointer2),y
 	dey
 	sty $3d
 	ldy $3e
 	ldx #SYSTEMBANK
-	stx IndirectBank
+	stx IndirectBank		; set indirect bank to systembank
 	sta (pointer1),y
 	dey
 	sty $3e
 	ldy $3d
-	bpl l2185
+	bpl wrsclp1
 	ldx $1f
 	dex
 	stx $1f
-	bne l2183
+	bne wrsclp2
 	rts
-l21a5:	lda l3287,x
-	sta $35
-	lda l328c,x
-	sta $36
+; ----------------------------------------------------------------------------
+; set pointer2 to chip graphics address
+chipadr:lda chip_graphics,x
+	sta pointer2
+	lda chip_graphics_hi,x
+	sta pointer2+1
 	rts
-l21b0:	lda #$d0
+; ----------------------------------------------------------------------------
+; Clear screen
+clrscrn:lda #>ScreenRAM
 	sta pointer1+1
-	ldy #$00
+	ldy #<ScreenRAM
 	sty pointer1
 	lda #SYSTEMBANK
 	sta IndirectBank
-	lda #$20
-	ldx #$08
-l21c0:	sta (pointer1),y
+	lda #' '			; space
+	ldx #$08			; 8 pages
+clrsclp:sta (pointer1),y
 	iny
-	bne l21c0
+	bne clrsclp
 	inc pointer1+1
 	dex
-	bne l21c0
+	bne clrsclp
 	rts
+; ----------------------------------------------------------------------------
+; 
 l21cb:	jsr l2ca7
 	jsr l2c84
 	lda #SYSTEMBANK
@@ -1287,14 +1299,14 @@ l2a0f:	lda #$30
 	ldx $2b
 	dex
 	txa
-	jsr l2c40
+	jsr calc2
 	tay
 	lda #$2a
 	sta (pointer1),y
 	ldx $31
 	dex
 l2a2a:	txa
-	jsr l2c40
+	jsr calc2
 	tay
 	lda #$20
 	sta (pointer1),y
@@ -1308,14 +1320,14 @@ l2a34:	lda #$80
 	ldx CodeBank
 	dex
 	txa
-	jsr l2c40
+	jsr calc2
 	tay
 	lda #$2a
 	sta (pointer1),y
 	ldx $30
 	dex
 	txa
-	jsr l2c40
+	jsr calc2
 	tay
 	lda #$20
 	sta (pointer1),y
@@ -1376,7 +1388,7 @@ l2a71:	stx IndirectBank
 	lda #$ff
 	sta $0017,y
 	tya
-	jsr l2c40
+	jsr calc2
 	tay
 	lda #$31
 	sta $5b
@@ -1464,7 +1476,7 @@ l2b56:	lda ($5d),y
 l2b6a:	dex
 	bne l2b54
 	ldy #$02
-l2b6f:	lda l3284,y
+l2b6f:	lda chip_bad,y
 	and #$3f
 	ora #$80
 	sta ($5d),y
@@ -1576,16 +1588,22 @@ l2c32:	and #$0f
 	bne l2c3f
 l2c3d:	ora #$30
 l2c3f:	rts
-l2c40:	jsr l2c46
+; ----------------------------------------------------------------------------
+; 
+calc2:	jsr mul5
 	asl
 	asl
 	rts
-l2c46:	clc
+; ----------------------------------------------------------------------------
+; 
+mul5:	clc
 	sta $4a
 	asl
 	asl
 	adc $4a
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c4e:	lda #$7f
 	sta pointer1
 	lda #$00
@@ -1901,16 +1919,25 @@ l3237:
 !byte $d0, $d0, $d2, $d3, $d7, $d7, $d7, $d7
 !byte $d7, $d7, $d7, $d7, $d7, $d7, $d7, $d7
 !byte $d7, $d7, $d7, $d7, $d5, $d0, $d6, $d7
-!byte $d0, $d1, $d3, $d5, $d6, $d6, $d0, $d0
-!byte $d3, $d3, $70, $40, $60, $40, $6e, $5d
-!byte $20, $20, $15, $5d, $5d, $20, $0f, $0b
-!byte $5d, $6d, $40, $40, $40, $7d
-l3284:
-!byte $42, $41, $44
-l3287:
-!byte $70, $75, $7a, $7f, $84
-l328c:
-!byte $32, $32, $32, $32, $32, $15, $3d, $45, $6d, $52
+!byte $d0, $d1, $d3, $d5, $d6, $d6, $d0, $d0, $d3, $d3
+; chip graphics table
+chip_top:
+!byte $70, $40, $60, $40, $6e		; ic upper line
+chip_u:
+!byte $5d, ' ', ' ', 'u', $5d		; ic line with U
+chip_ok:
+!byte $5d, ' ', 'o', 'k', $5d		; ic line with OK
+chip_bottom:
+!byte $6d, $40, $40, $40, $7d		; ic lower line
+chip_bad:
+!byte 'B', 'A', 'D'			; BAD
+; chip graphics addresses
+chip_graphics:
+!byte <chip_top, <chip_u, <chip_ok ,<chip_bottom ,<chip_bad
+chip_graphics_hi:
+!byte >chip_top, >chip_u, >chip_ok ,>chip_bottom ,>chip_bad
+
+!byte $15, $3d, $45, $6d, $52
 !byte $d1, $d1, $d3, $d3, $d5, $b8, $10, $38
 !byte $40, $68, $42, $92, $d0, $d1, $d1, $d3
 !byte $d3, $d7, $d7, $e0, $0b, $33, $3b, $63
