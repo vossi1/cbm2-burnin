@@ -1,35 +1,45 @@
 ; CBMII b128-256 burnin 
 ; disassembled by vossi 10/2023
 !cpu 6502
-!to "load1.prg", cbm
+!to "load 1.prg", cbm
+; ***************************************** CONSTANTS *********************************************
+SYSTEMBANK		= $0f		; #SYSTEMBANK
+; ***************************************** ADDRESSES *********************************************
+!addr CodeBank		= $00		; code bank register
+!addr IndirectBank	= $01		; indirect bank register
+;!addr ScreenRAM		= $d000		; Screen RAM
+; ***************************************** ZERO PAGE *********************************************
+!addr pointer1		= $12		; 16bit pointer
+!addr banks		= $2f		; RAM banks
+; ******************************************* CODE ************************************************
 *= $2000
 	sei
 	cld
 	ldx #$ff
 	txs
-	ldy #$02		; clear zero page
+	ldy #$02			; clear zero page
 	lda #$00
 clrzplp:sta $0000,y
 	iny
 	bne clrzplp
-	ldx #$02
-	stx $2f
+	ldx #$02		; ***** check if 128k or 256k RAM
+	stx banks			; default 2 banks
 	inx
-	stx $01
+	stx IndirectBank		; set bank 3 as indirect bank
 	lda #$60
-	sta $13
+	sta pointer1+1			; check from $6000
 	lda #$a5
-	sta $4a
-l201e:	sta ($12),y
-l2020:	lda ($12),y
-	cmp $4a
-	beq l202b
+	sta $4a				; remember test byte $a5
+chkbklp:sta (pointer1),y
+	lda (pointer1),y
+	cmp $4a				; check if RAM here
+	beq cbm256			; RAM in bank 3
 	iny
-	bne l201e
-	beq l202f
-l202b:	lda #$04
-	sta $2f
-l202f:	jsr l21b0
+	bne chkbklp			; check next byte
+	beq cbm128			; no RAM from $6000 to $60ff
+cbm256:	lda #$04
+	sta banks			; store 4 banks
+cbm128:	jsr l21b0
 	ldx #$00
 	jsr l21a5
 	lda #$f0
@@ -83,8 +93,8 @@ l2053:	ldy #$d2
 	ldx #$2b
 	jsr l2d10
 	jsr l2c60
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	ldy #$00
 	lda ($7b),y
 	and #$fe
@@ -144,18 +154,18 @@ l211f:	ldx $4a
 	sta $5d
 	lda l332d,x
 	sta $5e
-	lda $00
-	sta $01
+	lda CodeBank
+	sta IndirectBank
 	ldy $4c
 	lda ($5b),y
-	sta $12
+	sta pointer1
 	lda ($5d),y
-	sta $13
-	lda #$0f
-	sta $01
+	sta pointer1+1
+	lda #SYSTEMBANK
+	sta IndirectBank
 	lda $4d
 	ldy #$00
-	sta ($12),y
+	sta (pointer1),y
 	ldx $4c
 	dex
 	stx $4c
@@ -164,7 +174,7 @@ l211f:	ldx $4a
 	dex
 	stx $4a
 	bpl l2113
-	lda $2f
+	lda banks
 	cmp #$04
 	beq l216b
 	ldx #$38
@@ -172,9 +182,9 @@ l211f:	ldx $4a
 	ldx #$37
 	jsr l2d10
 l216b:	jmp l21cb
-l216e:	sta $12
-	sty $13
-	ldx $00
+l216e:	sta pointer1
+	sty pointer1+1
+	ldx CodeBank
 	stx $20
 	ldx #$10
 	stx $1f
@@ -185,14 +195,14 @@ l216e:	sta $12
 	sta $3e
 l2183:	ldy #$04
 l2185:	lda $20
-	sta $01
+	sta IndirectBank
 	lda ($35),y
 	dey
 	sty $3d
 	ldy $3e
-	ldx #$0f
-	stx $01
-	sta ($12),y
+	ldx #SYSTEMBANK
+	stx IndirectBank
+	sta (pointer1),y
 	dey
 	sty $3e
 	ldy $3d
@@ -208,24 +218,24 @@ l21a5:	lda l3287,x
 	sta $36
 	rts
 l21b0:	lda #$d0
-	sta $13
+	sta pointer1+1
 	ldy #$00
-	sty $12
-	lda #$0f
-	sta $01
+	sty pointer1
+	lda #SYSTEMBANK
+	sta IndirectBank
 	lda #$20
 	ldx #$08
-l21c0:	sta ($12),y
+l21c0:	sta (pointer1),y
 	iny
 	bne l21c0
-	inc $13
+	inc pointer1+1
 	dex
 	bne l21c0
 	rts
 l21cb:	jsr l2ca7
 	jsr l2c84
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	jsr l2275
 	jsr l229e
 	jsr l22f2
@@ -256,11 +266,11 @@ l2215:	lda $21,x
 	dex
 	bpl l2215
 l2220:	lda #$2d
-	sta $12
+	sta pointer1
 	lda #$d0
-	sta $13
-	lda #$0f
-	sta $01
+	sta pointer1+1
+	lda #SYSTEMBANK
+	sta IndirectBank
 	ldx #$ff
 	ldy #$00
 l2230:	inx
@@ -273,11 +283,11 @@ l2238:	lda $21,x
 	and #$f0
 	beq l2246
 l2240:	jsr l2c2e
-	sta ($12),y
+	sta (pointer1),y
 	iny
 l2246:	lda $21,x
 	jsr l2c32
-	sta ($12),y
+	sta (pointer1),y
 	iny
 	inx
 	lda $21,x
@@ -286,10 +296,10 @@ l2246:	lda $21,x
 	cld
 	jmp l21cb
 l2259:	rts
-l225a:	lda $01
+l225a:	lda IndirectBank
 	sta $58
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	ldy #$00
 	lda #$0c
 	sta ($9f),y
@@ -298,13 +308,13 @@ l225a:	lda $01
 	sta ($a1),y
 	sta $3f
 	lda $58
-	sta $01
+	sta IndirectBank
 	rts
 l2275:	ldy #$00
-	lda $01
+	lda IndirectBank
 	sta $58
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	sta ($8f),y
 	lda #$00
 	sta ($69),y
@@ -319,25 +329,25 @@ l2275:	ldy #$00
 	lda #$14
 	sta ($67),y
 	lda $58
-	sta $01
+	sta IndirectBank
 	rts
 l229e:	ldy #$47
 	lda #$00
-	sta $12
+	sta pointer1
 	sta $4a
 	lda #$33
-	sta $13
+	sta pointer1+1
 	sec
 	sbc #$20
 	tax
-	lda $00
-	sta $01
-l22b2:	lda ($12),y
+	lda CodeBank
+	sta IndirectBank
+l22b2:	lda (pointer1),y
 	eor $4a
 	sta $4a
 	dey
 	bne l22b2
-	dec $13
+	dec pointer1+1
 	dex
 	bpl l22b2
 	lda $1d
@@ -355,26 +365,26 @@ l22d5:	lda $4a
 	sty $4a
 	ldy #$00
 	ldx #$2e
-	stx $12
+	stx pointer1
 	ldx #$d7
-	stx $13
-	ldx #$0f
-	stx $01
-	sta ($12),y
+	stx pointer1+1
+	ldx #SYSTEMBANK
+	stx IndirectBank
+	sta (pointer1),y
 	iny
 	lda $4a
-	sta ($12),y
+	sta (pointer1),y
 	rts
 l22f2:	clv
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	ldy #$00
 	ldx #$20
 	lda #$e0
 	jsr l2323
 	ldy #$05
 	ldx #$20
-	lda $2f
+	lda banks
 	cmp #$04
 	beq l230e
 	lda $a0
@@ -383,32 +393,32 @@ l230e:	lda #$a0
 l2310:	jsr l2323
 	ldy #$0a
 	ldx #$20
-	lda $2f
+	lda banks
 	cmp #$04
 	beq l2321
 	lda $80
 	bvc l2323
 l2321:	lda #$80
 l2323:	sty $39
-	sta $13
+	sta pointer1+1
 	dex
 	txa
 	clc
-	adc $13
-	sta $13
+	adc pointer1+1
+	sta pointer1+1
 	lda #$00
 	sta $4c
-	sta $12
+	sta pointer1
 	tay
 l2335:	clc
-	lda ($12),y
+	lda (pointer1),y
 	adc $4c
 	adc #$00
 	adc #$00
 	sta $4c
 	dey
 	bne l2335
-	dec $13
+	dec pointer1+1
 	dex
 	bpl l2335
 	lda $39
@@ -428,8 +438,8 @@ l2335:	clc
 	sta ($5b),y
 	rts
 	lda $4c
-	inc $13
-	cmp $13
+	inc pointer1+1
+	cmp pointer1+1
 	beq l2371
 	jsr l2b3e
 l2371:	rts
@@ -438,8 +448,8 @@ l2372:	sei
 	jsr l2d10
 	jsr l2cb9
 	jsr l2c4e
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	jsr l2586
 	ldy #$00
 	lda #$00
@@ -712,8 +722,8 @@ l2592:	sei
 	jsr l2586
 	ldy #$00
 	sty $16
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	sty $43
 	sty $44
 	sty $45
@@ -786,13 +796,13 @@ l261e:	bne l2653
 	clc
 	adc #$01
 	sta ($8f),y
-	sty $12
-	sty $13
+	sty pointer1
+	sty pointer1+1
 l2641:	lda ($99),y
 	bne l264f
-	dec $12
+	dec pointer1
 	bne l2641
-	dec $13
+	dec pointer1+1
 	bne l2641
 	beq l2653
 l264f:	cmp #$04
@@ -812,8 +822,8 @@ l2653:	lda #$ff
 l266c:	jsr l2d10
 l266f:	rts
 l2670:	sed
-	sty $12
-	sty $13
+	sty pointer1
+	sty pointer1+1
 	sty $4b
 	lda $46
 	sta $42
@@ -867,9 +877,9 @@ l26cf:	lda #$80
 l26d5:	lda ($8f),y
 	cmp $49
 	bne l26e9
-	dec $12
+	dec pointer1
 	bne l26d5
-	dec $13
+	dec pointer1+1
 	bne l26d5
 	dec $4b
 	bne l26d5
@@ -889,46 +899,46 @@ l26ff:	lda #$ff
 	sta $16
 l2703:	cld
 	rts
-l2705:	ldy $2f
+l2705:	ldy banks
 	dey
 	sty $57
-	ldx $00
+	ldx CodeBank
 	stx $31
 	dex
 	bne l2713
-	ldx $2f
+	ldx banks
 l2713:	stx $2b
 	stx $30
 	jsr l2a34
 	jsr l2a0f
 	ldx $2b
-	stx $01
+	stx IndirectBank
 	jsr l27e5
 	ldx $2b
 	stx $31
 	dex
 	bne l272d
-	ldx $2f
+	ldx banks
 l272d:	stx $2b
 	dec $57
 	bne l2713
 	ldx $31
 	stx $2b
 	jsr l2a0f
-	ldy $2f
+	ldy banks
 	dey
 	sty $57
-	ldx $00
+	ldx CodeBank
 	stx $30
 	stx $2b
 	dex
 	bne l274a
-	ldx $2f
+	ldx banks
 l274a:	lda $16,x
 	beq l2760
 l274e:	dex
 	bne l2753
-	ldx $2f
+	ldx banks
 l2753:	dec $57
 	bne l274a
 	ldx $2b
@@ -940,7 +950,7 @@ l2760:	stx $56
 	ldx #$00
 	ldy #$00
 	jsr l2c1f
-	lda $00
+	lda CodeBank
 	jsr l2c16
 	ldx #$33
 	inx
@@ -948,20 +958,20 @@ l2760:	stx $56
 	beq l277b
 	ldx $56
 	bpl l274e
-l277b:	ldy $00
+l277b:	ldy CodeBank
 	ldx $56
-	stx $00
+	stx CodeBank
 	nop
 	nop
 	nop
 	nop
 	sty $2b
-	ldx $00
+	ldx CodeBank
 	stx $31
 	jsr l2a0f
 	jsr l2a34
 	ldx $2b
-	stx $01
+	stx IndirectBank
 	jsr l27e5
 	ldx $2b
 	stx $31
@@ -970,13 +980,13 @@ l279f:	jsr l27a3
 	rts
 l27a3:	ldx #$2c
 	jsr l2d10
-	lda #$0f
-	sta $01
+	lda #SYSTEMBANK
+	sta IndirectBank
 	ldy #$02
 	ldx #$00
 	lda #$08
 	jsr l27ea
-	lda $00
+	lda CodeBank
 	ldx #$d0
 	ldy #$00
 	jsr l2c1f
@@ -992,7 +1002,7 @@ l27a3:	ldx #$2c
 	ldx #$d0
 	ldy #$00
 	jsr l2c1f
-	lda $00
+	lda CodeBank
 	jsr l2c16
 	ldx #$08
 	jsr l2bad
@@ -1006,47 +1016,47 @@ l27ea:	sty $41
 	dey
 	sty $26
 	lda #$00
-	sta $12
-	lda $01
-	cmp #$0f
+	sta pointer1
+	lda IndirectBank
+	cmp #SYSTEMBANK
 	beq l2805
 	jsr l2275
 	ldx #$0e
 	jsr l2d10
 l2805:	ldy $41
 	lda $40
-	sta $13
+	sta pointer1+1
 l280b:	tya
 	sta $4c
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l2819
 	jsr l2a59
 l2819:	iny
 	bne l280b
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l280b
 	ldx #$0f
 	jsr l2b7e
 l2829:	tya
 	sta $4c
-	lda ($12),y
+	lda (pointer1),y
 	eor $4c
 	beq l2835
 	jsr l2a59
-l2835:	lda $13
-	sta ($12),y
-	lda ($12),y
-	eor $13
+l2835:	lda pointer1+1
+	sta (pointer1),y
+	lda (pointer1),y
+	eor pointer1+1
 	beq l2842
 	jsr l2a59
 l2842:	iny
 	bne l2829
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l2829
 	ldx #$10
@@ -1055,91 +1065,91 @@ l2842:	iny
 	sta $4c
 	lda #$aa
 	sta $4d
-l285a:	lda ($12),y
-	eor $13
+l285a:	lda (pointer1),y
+	eor pointer1+1
 	beq l2863
 	jsr l2a59
 l2863:	lda #$55
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l2870
 	jsr l2a59
 l2870:	iny
-	lda ($12),y
-	eor $13
+	lda (pointer1),y
+	eor pointer1+1
 	beq l287a
 	jsr l2a59
 l287a:	lda #$aa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4d
 	beq l2887
 	jsr l2a59
 l2887:	iny
 	bne l285a
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l285a
 	ldx #$11
 	jsr l2b7e
-l2897:	lda ($12),y
+l2897:	lda (pointer1),y
 	eor $4c
 	beq l28a0
 	jsr l2a59
 l28a0:	lda #$aa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4d
 	beq l28ad
 	jsr l2a59
 l28ad:	iny
-	lda ($12),y
+	lda (pointer1),y
 	eor $4d
 	beq l28b7
 	jsr l2a59
 l28b7:	lda #$55
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l28c4
 	jsr l2a59
 l28c4:	iny
 	bne l2897
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l2897
 	ldx #$12
 	jsr l2b7e
 	ldx #$5a
 	stx $4e
-l28d8:	lda ($12),y
+l28d8:	lda (pointer1),y
 	eor $4d
 	beq l28e1
 	jsr l2a59
 l28e1:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4e
 	beq l28ed
 	jsr l2a59
 l28ed:	iny
-	lda ($12),y
+	lda (pointer1),y
 	eor $4c
 	beq l28f7
 	jsr l2a59
 l28f7:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4e
 	beq l2903
 	jsr l2a59
 l2903:	iny
 	bne l28d8
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l28d8
 	jsr l2275
@@ -1149,30 +1159,30 @@ l2903:	iny
 	stx $4c
 	ldx #$a5
 	stx $4d
-l291e:	lda ($12),y
+l291e:	lda (pointer1),y
 	eor $4c
 	beq l2927
 	jsr l2a59
 l2927:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4d
 	beq l2933
 	jsr l2a59
 l2933:	dey
 	cpy #$ff
 	bne l291e
-	dec $13
-	lda $13
+	dec pointer1+1
+	lda pointer1+1
 	cmp $40
 	bne l291e
-l2940:	lda ($12),y
+l2940:	lda (pointer1),y
 	eor $4c
 	beq l2949
 	jsr l2a59
 l2949:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4d
 	beq l2955
 	jsr l2a59
@@ -1182,30 +1192,30 @@ l2955:	dey
 	ldx #$14
 	jsr l2b95
 	ldx #$5a
-l2961:	lda ($12),y
+l2961:	lda (pointer1),y
 	eor $4d
 	beq l296a
 	jsr l2a59
 l296a:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l2976
 	jsr l2a59
 l2976:	dey
 	cpy #$ff
 	bne l2961
-	dec $13
-	lda $13
+	dec pointer1+1
+	lda pointer1+1
 	cmp $40
 	bne l2961
-l2983:	lda ($12),y
+l2983:	lda (pointer1),y
 	eor $4d
 	beq l298c
 	jsr l2a59
 l298c:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l2998
 	jsr l2a59
@@ -1216,20 +1226,20 @@ l2998:	dey
 	jsr l2b7e
 	ldx #$ff
 	stx $4e
-l29a6:	lda ($12),y
+l29a6:	lda (pointer1),y
 	eor $4c
 	beq l29af
 	jsr l2a59
 l29af:	txa
-	sta ($12),y
-	lda ($12),y
+	sta (pointer1),y
+	lda (pointer1),y
 	eor $4e
 	beq l29bb
 	jsr l2a59
 l29bb:	iny
 	bne l29a6
-	inc $13
-	lda $13
+	inc pointer1+1
+	lda pointer1+1
 	cmp $25
 	bne l29a6
 	ldx #$16
@@ -1239,29 +1249,29 @@ l29bb:	iny
 	ldx #$ff
 	stx $4d
 l29d3:	txa
-	lda ($12),y
+	lda (pointer1),y
 	eor $4d
 	beq l29dd
 	jsr l2a59
-l29dd:	sta ($12),y
-	lda ($12),y
+l29dd:	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l29e8
 	jsr l2a59
 l29e8:	dey
 	cpy #$ff
 	bne l29d3
-	dec $13
-	lda $13
+	dec pointer1+1
+	lda pointer1+1
 	cmp $40
 	bne l29d3
 l29f5:	txa
-	lda ($12),y
+	lda (pointer1),y
 	eor $4d
 	beq l29ff
 	jsr l2a59
-l29ff:	sta ($12),y
-	lda ($12),y
+l29ff:	sta (pointer1),y
+	lda (pointer1),y
 	eor $4c
 	beq l2a0a
 	jsr l2a59
@@ -1269,60 +1279,60 @@ l2a0a:	dey
 	cpy $26
 	bne l29f5
 l2a0f:	lda #$30
-	sta $12
+	sta pointer1
 	lda #$d7
-	sta $13
-	ldx #$0f
-	stx $01
+	sta pointer1+1
+	ldx #SYSTEMBANK
+	stx IndirectBank
 	ldx $2b
 	dex
 	txa
 	jsr l2c40
 	tay
 	lda #$2a
-	sta ($12),y
+	sta (pointer1),y
 	ldx $31
 	dex
 l2a2a:	txa
 	jsr l2c40
 	tay
 	lda #$20
-	sta ($12),y
+	sta (pointer1),y
 	rts
 l2a34:	lda #$80
-	sta $12
+	sta pointer1
 	lda #$d7
-	sta $13
-	ldx #$0f
-	stx $01
-	ldx $00
+	sta pointer1+1
+	ldx #SYSTEMBANK
+	stx IndirectBank
+	ldx CodeBank
 	dex
 	txa
 	jsr l2c40
 	tay
 	lda #$2a
-	sta ($12),y
+	sta (pointer1),y
 	ldx $30
 	dex
 	txa
 	jsr l2c40
 	tay
 	lda #$20
-	sta ($12),y
+	sta (pointer1),y
 	rts
 l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
 	jsr l2c28
-	ldx $01
+	ldx IndirectBank
 	stx $58
-	cpx #$0f
+	cpx #SYSTEMBANK
 	bne l2a6f
-	ldx $00
+	ldx CodeBank
 	bne l2a71
-l2a6f:	ldx #$0f
-l2a71:	stx $01
+l2a6f:	ldx #SYSTEMBANK
+l2a71:	stx IndirectBank
 	sty $4a
 	ldy #$00
 	ldx #$e0
@@ -1338,7 +1348,7 @@ l2a71:	stx $01
 	tya
 	ldy #$03
 	sta ($5b),y
-	lda $13
+	lda pointer1+1
 	jsr l2c28
 	sty $4a
 	ldy #$05
@@ -1354,7 +1364,7 @@ l2a71:	stx $01
 	iny
 	lda $4a
 	sta ($5b),y
-	lda $00
+	lda CodeBank
 	jsr l2c28
 	tya
 	ldy #$0b
@@ -1406,12 +1416,12 @@ l2b0a:	ldx $56
 	stx $56
 	bne l2af4
 l2b11:	ldx $58
-	stx $01
+	stx IndirectBank
 	ldx $28
 	ldy $29
 	lda #$00
 	rts
-l2b1c:	lda $13
+l2b1c:	lda pointer1+1
 	and #$f0
 	bne l2b2f
 	lda #$a1
@@ -1424,11 +1434,11 @@ l2b2f:	lda #$a6
 	sta $5b
 	lda #$d5
 	sta $5c
-	lda $00
+	lda CodeBank
 	jsr l2b40
 	bmi l2b11
-l2b3e:	lda #$0f
-l2b40:	sta $01
+l2b3e:	lda #SYSTEMBANK
+l2b40:	sta IndirectBank
 	tya
 	pha
 	ldy #$00
@@ -1464,31 +1474,31 @@ l2b7b:	pla
 	tay
 	rts
 l2b7e:	stx $50
-	lda $01
-	cmp #$0f
+	lda IndirectBank
+	cmp #SYSTEMBANK
 	beq l2b8e
 	jsr l225a
 	ldx $50
 	jsr l2d10
 l2b8e:	ldy $41
 	lda $40
-	sta $13
+	sta pointer1+1
 	rts
 l2b95:	stx $50
-	lda $01
-	cmp #$0f
+	lda IndirectBank
+	cmp #SYSTEMBANK
 	beq l2ba5
 	jsr l225a
 	ldx $50
 	jsr l2d10
 l2ba5:	ldy $25
 	dey
-	sty $13
+	sty pointer1+1
 	ldy #$ff
 	rts
 l2bad:	stx $34
 	stx $4a
-	ldx $01
+	ldx IndirectBank
 	stx $58
 	ldy #$00
 	cpy $2d
@@ -1496,10 +1506,10 @@ l2bad:	stx $34
 	ldy #$02
 l2bbd:	sty $3d
 l2bbf:	ldx $31
-	stx $01
+	stx IndirectBank
 	lda ($32),y
 	ldx $2b
-	stx $01
+	stx IndirectBank
 	sta ($2c),y
 	iny
 	bne l2bbf
@@ -1521,11 +1531,11 @@ l2be8:	lda $4c
 	lda $4d
 	sta $2d
 l2bf0:	ldx $31
-	stx $01
+	stx IndirectBank
 	lda ($32),y
 	sta $10
 	ldx $2b
-	stx $01
+	stx IndirectBank
 	lda ($2c),y
 	eor $10
 	ora $11
@@ -1537,7 +1547,7 @@ l2bf0:	ldx $31
 	dec $34
 	bne l2bf0
 	ldx $58
-	stx $01
+	stx IndirectBank
 	lda $11
 	rts
 l2c16:	sta $31
@@ -1577,27 +1587,27 @@ l2c46:	clc
 	adc $4a
 	rts
 l2c4e:	lda #$7f
-	sta $12
+	sta pointer1
 	lda #$00
-	sta $13
+	sta pointer1+1
 	lda #$a2
 	ldx #$2f
 	ldy #$1f
 	jsr l2ce8
 	rts
 l2c60:	lda #$6f
-	sta $12
+	sta pointer1
 	lda #$00
-	sta $13
+	sta pointer1+1
 	lda #$da
 	ldx #$2f
 	ldy #$0f
 	jsr l2ce8
 	rts
 	lda #$5f
-	sta $12
+	sta pointer1
 	lda #$00
-	sta $13
+	sta pointer1+1
 	lda #$ca
 	ldx #$2f
 	ldy #$0f
@@ -1613,18 +1623,18 @@ l2c84:	lda #$00
 	sta $a2
 	rts
 	lda #$a3
-	sta $12
+	sta pointer1
 	lda #$00
-	sta $13
+	sta pointer1+1
 	lda #$c2
 	ldx #$2f
 	ldy #$07
 	jsr l2ce8
 	rts
 l2ca7:	lda #$5f
-	sta $12
+	sta pointer1
 	lda #$00
-	sta $13
+	sta pointer1+1
 	lda #$68
 	ldx #$2f
 	ldy #$39
@@ -1653,10 +1663,10 @@ l2cb9:	lda #$f0
 	rts
 l2ce8:	sta $5b
 	stx $5c
-	lda $00
-	sta $01
+	lda CodeBank
+	sta IndirectBank
 l2cf0:	lda ($5b),y
-	sta ($12),y
+	sta (pointer1),y
 	dey
 	bpl l2cf0
 	rts
@@ -1686,7 +1696,7 @@ l2d10:	pha
 	sta $55
 l2d19:	lda #$3f
 l2d1b:	sta $2a
-	lda $01
+	lda IndirectBank
 	sta $58
 	lda l3153,x
 	tay
@@ -1698,18 +1708,18 @@ l2d2d:	sta $38
 	sta $14
 	lda l3237,x
 	sta $15
-	ldx #$0f
-l2d3b:	lda $00
-	sta $01
+	ldx #SYSTEMBANK
+l2d3b:	lda CodeBank
+	sta IndirectBank
 	lda ($37),y
 	and $2a
 	ora $55
-	stx $01
+	stx IndirectBank
 	sta ($14),y
 	dey
 	bpl l2d3b
 	lda $58
-	sta $01
+	sta IndirectBank
 	pla
 	tax
 	pla
