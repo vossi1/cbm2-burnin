@@ -11,21 +11,29 @@ SYSTEMBANK		= $0f		; #SYSTEMBANK
 !addr ScreenRAM		= $d000		; Screen RAM
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
+!addr screen_pointer	= $14		; 16bit pointer screen
 !addr actual_codebank	= $20		; actual code bank
+!addr temp_and_value	= $2a		; temp screen data and value
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
+!addr screendata_pointer= $37		; 16bit pointer screen data
+!addr temp_dec_value	= $55		; temp dec value
+!addr temp_or_value	= $55		; temp screen data or value
+!addr actual_indirbank	= $58		; actual indirect bank
 ; ******************************************* CODE ************************************************
 *= $2000
 	sei
 	cld
 	ldx #$ff
 	txs
-	ldy #$02			; clear zero page
+; clear zero page
+	ldy #$02
 	lda #$00
 clrzplp:sta $0000,y
 	iny
 	bne clrzplp
-	ldx #$02		; ***** check if 128k or 256k RAM
+; check if 128k or 256k machine
+	ldx #$02
 	stx banks			; default 2 banks
 	inx
 	stx IndirectBank		; set bank 3 as indirect bank
@@ -39,10 +47,11 @@ chkbklp:sta (pointer1),y
 	beq cbm256			; RAM in bank 3
 	iny
 	bne chkbklp			; check next byte
-	beq cbm128			; no RAM from $6000 to $60ff
+	beq drawscr			; no RAM from $6000 to $60ff
 cbm256:	lda #$04
 	sta banks			; store 4 banks
-cbm128:	jsr clrscrn			; sub: clear screen
+; draw chips
+drawscr:jsr clrscrn			; sub: clear screen
 	ldx #0
 	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$f0
@@ -87,15 +96,15 @@ l2053:	ldy #$d2
 	lda #$a0
 	ldy #$d5
 	jsr drawics			; sub: draw chip graphics to screen
-
+; draw screen text
 	ldx #$00
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	ldx #$01
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	ldx #$02
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	ldx #$2b
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	jsr l2c60
 	lda #SYSTEMBANK
 	sta IndirectBank
@@ -114,7 +123,7 @@ l2053:	ldy #$d2
 	stx $4d
 	bne l20f1
 l20d1:	ldx #$2f
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	ldx #$08
 	stx $4c
 	ldx #$06
@@ -138,7 +147,7 @@ l20f1:	ldx $4d
 	ldx #$17
 	stx $4d
 l2104:	ldx $4d
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	inc $4d
 	dec $4c
 	bne l2104
@@ -182,9 +191,9 @@ l211f:	ldx $4a
 	cmp #$04
 	beq l216b
 	ldx #$38
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	ldx #$37
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 l216b:	jmp l21cb
 ; ----------------------------------------------------------------------------
 ; draw chip graphics to screen
@@ -308,8 +317,10 @@ l2246:	lda $21,x
 	cld
 	jmp l21cb
 l2259:	rts
+; ----------------------------------------------------------------------------
+; 
 l225a:	lda IndirectBank
-	sta $58
+	sta actual_indirbank
 	lda #SYSTEMBANK
 	sta IndirectBank
 	ldy #$00
@@ -319,12 +330,14 @@ l225a:	lda IndirectBank
 	eor #$20
 	sta ($a1),y
 	sta $3f
-	lda $58
+	lda actual_indirbank
 	sta IndirectBank
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2275:	ldy #$00
 	lda IndirectBank
-	sta $58
+	sta actual_indirbank
 	lda #SYSTEMBANK
 	sta IndirectBank
 	sta ($8f),y
@@ -340,9 +353,11 @@ l2275:	ldy #$00
 	sta ($67),y
 	lda #$14
 	sta ($67),y
-	lda $58
+	lda actual_indirbank
 	sta IndirectBank
 	rts
+; ----------------------------------------------------------------------------
+; 
 l229e:	ldy #$47
 	lda #$00
 	sta pointer1
@@ -387,6 +402,8 @@ l22d5:	lda $4a
 	lda $4a
 	sta (pointer1),y
 	rts
+; ----------------------------------------------------------------------------
+; 
 l22f2:	clv
 	lda #SYSTEMBANK
 	sta IndirectBank
@@ -449,15 +466,19 @@ l2335:	clc
 	lda $4a
 	sta ($5b),y
 	rts
+; ----------------------------------------------------------------------------
+; 
 	lda $4c
 	inc pointer1+1
 	cmp pointer1+1
 	beq l2371
 	jsr l2b3e
 l2371:	rts
+; ----------------------------------------------------------------------------
+; 
 l2372:	sei
 	ldx #$36
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	jsr l2cb9
 	jsr l2c4e
 	lda #SYSTEMBANK
@@ -499,7 +520,7 @@ l23ca:	lda ($9d),y
 	and #$fe
 	sta ($9d),y
 	lda #$40
-	sta $55
+	sta temp_dec_value
 l23d4:	lda #$00
 	sta ($9b),y
 	sta ($9d),y
@@ -622,7 +643,7 @@ l24be:	lda ($8d),y
 	cmp #$cc
 	beq l24c6
 	dec $16
-l24c6:	dec $55
+l24c6:	dec temp_dec_value
 	bmi l24cd
 	jmp l23d4
 l24cd:	lda #$00
@@ -669,8 +690,10 @@ l2508:	lda $16
 	ldx #$2d
 	bne l2523
 	ldx #$34
-l2523:	jsr l2d10
+l2523:	jsr drawtxt			; sub: draw screen text
 l2526:	rts
+; ----------------------------------------------------------------------------
+; 
 l2527:	lda #$88
 	sta ($87),y
 	sta ($89),y
@@ -703,6 +726,8 @@ l2555:	lda ($99),y
 	bpl l2555
 	ldx $3b
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2567:	and $39
 	cmp $39
 	beq l256f
@@ -715,21 +740,27 @@ l2575:	ldx $3b
 	beq l257d
 	dec $16
 l257d:	rts
+; ----------------------------------------------------------------------------
+; 
 l257e:	lda #$05
 	clc
 l2581:	sbc #$01
 	bpl l2581
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2586:	ldy #$00
 	lda #$7f
 	sta ($99),y
 l258c:	ldy #$00
 	lda ($99),y
 	rts
+; ----------------------------------------------------------------------------
+; 
 	rti
 l2592:	sei
 	ldx #$35
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	jsr l2c4e
 	jsr l2586
 	ldy #$00
@@ -831,8 +862,10 @@ l2653:	lda #$ff
 	ldx #$33
 	bne l266c
 	ldx #$34
-l266c:	jsr l2d10
+l266c:	jsr drawtxt			; sub: draw screen text
 l266f:	rts
+; ----------------------------------------------------------------------------
+; 
 l2670:	sed
 	sty pointer1
 	sty pointer1+1
@@ -911,6 +944,8 @@ l26ff:	lda #$ff
 	sta $16
 l2703:	cld
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2705:	ldy banks
 	dey
 	sty $57
@@ -990,8 +1025,10 @@ l277b:	ldy CodeBank
 	jsr l2a0f
 l279f:	jsr l27a3
 	rts
+; ----------------------------------------------------------------------------
+; 
 l27a3:	ldx #$2c
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 	lda #SYSTEMBANK
 	sta IndirectBank
 	ldy #$02
@@ -1019,6 +1056,8 @@ l27a3:	ldx #$2c
 	ldx #$08
 	jsr l2bad
 	rts
+; ----------------------------------------------------------------------------
+; 
 l27e5:	lda #$00
 	tax
 	ldy #$02
@@ -1034,7 +1073,7 @@ l27ea:	sty $41
 	beq l2805
 	jsr l2275
 	ldx #$0e
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 l2805:	ldy $41
 	lda $40
 	sta pointer1+1
@@ -1311,6 +1350,8 @@ l2a2a:	txa
 	lda #$20
 	sta (pointer1),y
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2a34:	lda #$80
 	sta pointer1
 	lda #$d7
@@ -1332,13 +1373,15 @@ l2a34:	lda #$80
 	lda #$20
 	sta (pointer1),y
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
 	jsr l2c28
 	ldx IndirectBank
-	stx $58
+	stx actual_indirbank
 	cpx #SYSTEMBANK
 	bne l2a6f
 	ldx CodeBank
@@ -1355,7 +1398,7 @@ l2a71:	stx IndirectBank
 	iny
 	lda $4a
 	sta ($5b),y
-	lda $58
+	lda actual_indirbank
 	jsr l2c28
 	tya
 	ldy #$03
@@ -1381,7 +1424,7 @@ l2a71:	stx IndirectBank
 	tya
 	ldy #$0b
 	sta ($5b),y
-	ldy $58
+	ldy actual_indirbank
 	cpy #$0f
 	beq l2b1c
 	dey
@@ -1403,7 +1446,7 @@ l2ad9:	lda ($5b),y
 	iny
 	dex
 	bne l2ad9
-l2ae3:	ldy $58
+l2ae3:	ldy actual_indirbank
 	dey
 	lda l3103,y
 	sta $5b
@@ -1427,12 +1470,14 @@ l2b0a:	ldx $56
 	dex
 	stx $56
 	bne l2af4
-l2b11:	ldx $58
+l2b11:	ldx actual_indirbank
 	stx IndirectBank
 	ldx $28
 	ldy $29
 	lda #$00
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2b1c:	lda pointer1+1
 	and #$f0
 	bne l2b2f
@@ -1485,33 +1530,39 @@ l2b6f:	lda chip_bad,y
 l2b7b:	pla
 	tay
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2b7e:	stx $50
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq l2b8e
 	jsr l225a
 	ldx $50
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 l2b8e:	ldy $41
 	lda $40
 	sta pointer1+1
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2b95:	stx $50
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq l2ba5
 	jsr l225a
 	ldx $50
-	jsr l2d10
+	jsr drawtxt			; sub: draw screen text
 l2ba5:	ldy $25
 	dey
 	sty pointer1+1
 	ldy #$ff
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2bad:	stx $34
 	stx $4a
 	ldx IndirectBank
-	stx $58
+	stx actual_indirbank
 	ldy #$00
 	cpy $2d
 	bne l2bbd
@@ -1558,20 +1609,26 @@ l2bf0:	ldx $31
 	inc $2d
 	dec $34
 	bne l2bf0
-	ldx $58
+	ldx actual_indirbank
 	stx IndirectBank
 	lda $11
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c16:	sta $31
 	stx $33
 	stx $4c
 	sty $32
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c1f:	sta $2b
 	stx $2d
 	stx $4d
 	sty $2c
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c28:	pha
 	jsr l2c32
 	tay
@@ -1613,6 +1670,8 @@ l2c4e:	lda #$7f
 	ldy #$1f
 	jsr l2ce8
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c60:	lda #$6f
 	sta pointer1
 	lda #$00
@@ -1622,6 +1681,8 @@ l2c60:	lda #$6f
 	ldy #$0f
 	jsr l2ce8
 	rts
+; ----------------------------------------------------------------------------
+; 
 	lda #$5f
 	sta pointer1
 	lda #$00
@@ -1631,6 +1692,8 @@ l2c60:	lda #$6f
 	ldy #$0f
 	jsr l2ce8
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2c84:	lda #$00
 	sta $9f
 	lda #$d8
@@ -1640,6 +1703,8 @@ l2c84:	lda #$00
 	lda #$d8
 	sta $a2
 	rts
+; ----------------------------------------------------------------------------
+; 
 	lda #$a3
 	sta pointer1
 	lda #$00
@@ -1649,6 +1714,8 @@ l2c84:	lda #$00
 	ldy #$07
 	jsr l2ce8
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2ca7:	lda #$5f
 	sta pointer1
 	lda #$00
@@ -1658,6 +1725,8 @@ l2ca7:	lda #$5f
 	ldy #$39
 	jsr l2ce8
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2cb9:	lda #$f0
 	sta $fffa
 	lda #$00
@@ -1679,6 +1748,8 @@ l2cb9:	lda #$f0
 	sta $f3
 	sta $f5
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2ce8:	sta $5b
 	stx $5c
 	lda CodeBank
@@ -1688,13 +1759,15 @@ l2cf0:	lda ($5b),y
 	dey
 	bpl l2cf0
 	rts
+; ----------------------------------------------------------------------------
+; 
 l2cf8:	pha
 	tya
 	pha
 	txa
 	pha
 	lda #$80
-	sta $55
+	sta temp_or_value
 	bne l2d19
 l2d03:	pha
 	tya
@@ -1702,49 +1775,52 @@ l2d03:	pha
 	txa
 	pha
 	lda #$00
-	sta $55
+	sta temp_or_value
 	lda #$ff
 	bne l2d1b
-l2d10:	pha
+; draw screen text
+drawtxt:pha				; save regs
 	tya
 	pha
 	txa
 	pha
-	lda #$00
-	sta $55
-l2d19:	lda #$3f
-l2d1b:	sta $2a
-	lda IndirectBank
-	sta $58
-	lda l3153,x
+	lda #$00			; data or value
+	sta temp_or_value
+l2d19:	lda #$3f			; data and value
+l2d1b:	sta temp_and_value
+	lda IndirectBank		; remember indirect bank
+	sta actual_indirbank
+	lda scrdata_count,x
 	tay
-	lda l318c,x
-	sta $37
-	lda l31c5,x
-l2d2d:	sta $38
-	lda l31fe,x
-	sta $14
-	lda l3237,x
-	sta $15
+	lda scrdata_lo,x
+	sta screendata_pointer
+	lda scrdata_hi,x
+l2d2d:	sta screendata_pointer+1
+	lda screen_lo,x
+	sta screen_pointer
+	lda screen_hi,x
+	sta screen_pointer+1
 	ldx #SYSTEMBANK
-l2d3b:	lda CodeBank
+drwtxlp:lda CodeBank
 	sta IndirectBank
-	lda ($37),y
-	and $2a
-	ora $55
+	lda (screendata_pointer),y
+	and temp_and_value
+	ora temp_or_value
 	stx IndirectBank
-	sta ($14),y
+	sta (screen_pointer),y
 	dey
-	bpl l2d3b
-	lda $58
-	sta IndirectBank
-	pla
+	bpl drwtxlp
+	lda actual_indirbank
+	sta IndirectBank		; restore indirect bank
+	pla				; restore regs
 	tax
 	pla
 	tay
 	pla
 	rts
-
+; ----------------------------------------------------------------------------
+; screen text data - not relocalable!
+*= $2d56
 !byte $48, $49, $47, $48, $5d, $20, $33, $37
 !byte $5d, $5d, $20, $34, $35, $5d, $5d, $20
 !byte $35, $30, $5d, $5d, $20, $35, $39, $5d
@@ -1775,13 +1851,13 @@ l2d3b:	lda CodeBank
 !byte $31, $30, $5d, $5d, $20, $20, $36, $5d
 !byte $5d, $20, $20, $37, $5d, $5d, $20, $20
 !byte $32, $5d, $5d, $20, $20, $31, $5d, $5d
-!byte $20, $38, $34, $5d, $43, $42, $4d, $2d
-!byte $49, $49, $20, $20, $20, $20, $4c, $4f
-!byte $57, $20, $50, $52, $4f, $46, $49, $4c
-!byte $45, $20, $20, $20, $39, $37, $30, $31
-!byte $34, $38, $2e, $41, $2e, $36, $20, $20
-!byte $20, $43, $59, $43, $4c, $45, $53, $3a
-!byte $20, $30, $5d, $20, $37, $39, $5d, $5d
+!byte $20, $38, $34, $5d, 'C', 'B', 'M', '-'	; CBM-II    LOW PROFILE   970148.A.6   CYCLES: 
+!byte 'I', 'I', ' ', ' ', ' ', ' ', 'L', 'O'
+!byte 'W', ' ', 'P', 'R', 'O', 'F', 'I', 'L'
+!byte 'E', ' ', ' ', ' ', '9', '7', '0', '1'
+!byte '4', '8', '.', 'A', '.', '6', ' ', ' '
+!byte ' ', 'C', 'Y', 'C', 'L', 'E', 'S', ':'
+!byte ' ', $30, $5d, $20, $37, $39, $5d, $5d
 !byte $20, $37, $38, $5d, $5d, $20, $37, $37
 !byte $5d, $5d, $20, $37, $36, $5d, $5d, $20
 !byte $37, $35, $5d, $5d, $20, $37, $34, $5d
@@ -1863,8 +1939,12 @@ l2d3b:	lda CodeBank
 !byte $2d, $2a, $53, $45, $47, $4d, $45, $4e
 !byte $54, $3a, $54, $45, $53, $54, $45, $58
 !byte $45, $43, $55, $54, $45
+; ----------------------------------------------------------------------------
+; 
 l3103: 
 !byte $41, $69, $71, $99
+; ----------------------------------------------------------------------------
+; 
 l3107:
 !byte $d1, $d1, $d3, $d3, $20, $2a, $20
 !byte $2a, $20, $20, $42, $41, $44, $20, $50
@@ -1876,34 +1956,42 @@ l3107:
 !byte $52, $41, $4d, $20, $20, $2a, $2a, $2a
 !byte $2a, $2a, $2a, $2a, $2a, $2a, $2a, $2a
 !byte $2a, $2a, $2a, $2a, $20
-l3153:
-!byte $2d, $09, $0a
-!byte $4f, $4f, $4f, $0b, $0b, $0b, $0b, $0b
-!byte $0b, $0b, $0b, $10, $10, $10, $07, $11
-!byte $0b, $02, $0b, $0b, $07, $07, $07, $07
+; ----------------------------------------------------------------------------
+; screendata count
+scrdata_count:
+!byte $2d, $09, $0a, $4f, $4f, $4f, $0b, $0b
+!byte $0b, $0b, $0b, $0b, $0b, $0b, $10, $10
+!byte $10, $07, $11, $0b, $02, $0b, $0b, $07
 !byte $07, $07, $07, $07, $07, $07, $07, $07
-!byte $06, $06, $06, $06, $03, $03, $03, $03
-!byte $30, $11, $02, $1f, $03, $4f, $4f, $4f
-!byte $02, $02, $11, $11, $27, $27
-l318c:
-!byte $4a, $ea
-!byte $f4, $78, $c8, $18, $e3, $e3, $e3, $e3
-!byte $e4, $e4, $e4, $e4, $ff, $10, $21, $32
-!byte $3a, $4c, $58, $5b, $67, $f0, $f0, $f0
+!byte $07, $07, $07, $06, $06, $06, $06, $03
+!byte $03, $03, $03, $30, $11, $02, $1f, $03
+!byte $4f, $4f, $4f, $02, $02, $11, $11, $27
+!byte $27
+; ----------------------------------------------------------------------------
+; screendata addresses lo
+scrdata_lo:
+!byte $4a, $ea, $f4, $78, $c8, $18, $e3, $e3
+!byte $e3, $e3, $e4, $e4, $e4, $e4, $ff, $10
+!byte $21, $32, $3a, $4c, $58, $5b, $67, $f0
 !byte $f0, $f0, $f0, $f0, $f0, $f0, $f0, $f0
-!byte $f0, $fc, $fc, $fc, $fc, $f8, $f8, $f8
-!byte $f8, $b2, $73, $a9, $0b, $56, $5a, $aa
-!byte $fa, $ac, $af, $85, $97, $2b, $2b 
-l31c5:
-!byte $2e
-!byte $2f, $2f, $2e, $2e, $2f, $30, $30, $30
-!byte $30, $30, $30, $30, $30, $2f, $30, $30
+!byte $f0, $f0, $f0, $fc, $fc, $fc, $fc, $f8
+!byte $f8, $f8, $f8, $b2, $73, $a9, $0b, $56
+!byte $5a, $aa, $fa, $ac, $af, $85, $97, $2b
+!byte $2b 
+; ----------------------------------------------------------------------------
+; screendata addresses hi
+scrdata_hi:
+!byte $2e, $2f, $2f, $2e, $2e, $2f, $30, $30
+!byte $30, $30, $30, $30, $30, $30, $2f, $30
 !byte $30, $30, $30, $30, $30, $30, $30, $30
 !byte $30, $30, $30, $30, $30, $30, $30, $30
 !byte $30, $30, $30, $30, $30, $30, $30, $30
-!byte $30, $30, $30, $30, $30, $31, $2d, $2d
-!byte $2d, $2d, $30, $30, $30, $30, $31, $31
-l31fe:
+!byte $30, $30, $30, $30, $30, $30, $31, $2d
+!byte $2d, $2d, $2d, $30, $30, $30, $30, $31
+!byte $31
+; ----------------------------------------------------------------------------
+; screen addresses lo
+screen_lo:
 !byte $00, $00, $11, $90, $c0, $f0, $a2, $ca
 !byte $d2, $fa, $ba, $e2, $ea, $12, $37, $37
 !byte $37, $40, $37, $3d, $46, $3d, $3d, $af
@@ -1912,14 +2000,18 @@ l31fe:
 !byte $46, $5a, $6e, $1f, $37, $af, $08, $09
 !byte $90, $c0, $f0, $af, $af, $37, $37, $20
 !byte $48 
-l3237:
-!byte $d0, $d5, $d5, $d1, $d3, $d5, $d0
-!byte $d0, $d2, $d2, $d0, $d0, $d2, $d3, $d0
+; ----------------------------------------------------------------------------
+; screen addresses hi
+screen_hi:
+!byte $d0, $d5, $d5, $d1, $d3, $d5, $d0, $d0
+!byte $d2, $d2, $d0, $d0, $d2, $d3, $d0, $d0
 !byte $d0, $d0, $d0, $d0, $d0, $d0, $d0, $d0
-!byte $d0, $d0, $d2, $d3, $d7, $d7, $d7, $d7
+!byte $d0, $d2, $d3, $d7, $d7, $d7, $d7, $d7
 !byte $d7, $d7, $d7, $d7, $d7, $d7, $d7, $d7
-!byte $d7, $d7, $d7, $d7, $d5, $d0, $d6, $d7
-!byte $d0, $d1, $d3, $d5, $d6, $d6, $d0, $d0, $d3, $d3
+!byte $d7, $d7, $d7, $d5, $d0, $d6, $d7, $d0
+!byte $d1, $d3, $d5, $d6, $d6, $d0, $d0, $d3
+!byte $d3
+; ----------------------------------------------------------------------------
 ; chip graphics table
 chip_top:
 !byte $70, $40, $60, $40, $6e		; ic upper line
@@ -1936,7 +2028,8 @@ chip_graphics:
 !byte <chip_top, <chip_u, <chip_ok ,<chip_bottom ,<chip_bad
 chip_graphics_hi:
 !byte >chip_top, >chip_u, >chip_ok ,>chip_bottom ,>chip_bad
-
+; ----------------------------------------------------------------------------
+; 
 !byte $15, $3d, $45, $6d, $52
 !byte $d1, $d1, $d3, $d3, $d5, $b8, $10, $38
 !byte $40, $68, $42, $92, $d0, $d1, $d1, $d3
@@ -1951,17 +2044,28 @@ chip_graphics_hi:
 !byte $4a, $d0, $d1, $d3, $d3, $6b, $d5, $66
 !byte $d5, $57, $d5, $61, $d5, $ad, $4c, $4d
 !byte $d5, $d6, $d6
-
+; ----------------------------------------------------------------------------
+; 
 l32f9:	
 !byte $04, $06, $06, $06, $06, $03, $03, $03, $00, $00, $00, $00, $02
+; ----------------------------------------------------------------------------
+; 
 l3306:
 !byte $91, $9b, $a9, $b7, $c5, $d3, $db, $e3, $eb, $ed, $ef, $f1, $f3
+; ----------------------------------------------------------------------------
+; 
 l3313:
 !byte $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32
+; ----------------------------------------------------------------------------
+; 
 l3320:
 !byte $96, $a2, $b0, $be, $cc, $d7, $df, $e7, $ec, $ee, $f0, $f2, $f6
+; ----------------------------------------------------------------------------
+; 
 l332d:
 !byte $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32
+; ----------------------------------------------------------------------------
+; 
 l333a:
 !byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $41, $44, $45, $20
 !byte $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa
