@@ -1823,54 +1823,37 @@ drwtxlp:lda CodeBank
 *= $2d56
 high:		!scr "HIGH"
 
-hirow1:		!scr $5d, " 37", $5d, $5d, " 45", $5d, $5d, " 50", $5d, $5d, " 59", $5d
+ichigh1:	!scr $5d, " 37", $5d, $5d, " 45", $5d, $5d, " 50", $5d, $5d, " 59", $5d
 		!scr $5d, " 67", $5d, $5d, " 76", $5d, $5d, " 85", $5d, $5d, " 89", $5d
 		!scr $5d, " 38", $5d, $5d, " 46", $5d, $5d, " 51", $5d, $5d, " 60", $5d
 		!scr $5d, " 68", $5d, $5d, " 77", $5d, $5d, " 86", $5d, $5d, " 90", $5d
 		
-hirow2:		!scr $5d, " 39", $5d, $5d, " 47", $5d, $5d, " 52", $5d, $5d, " 61", $5d
+ichigh2:	!scr $5d, " 39", $5d, $5d, " 47", $5d, $5d, " 52", $5d, $5d, " 61", $5d
 		!scr $5d, " 69", $5d, $5d, " 78", $5d, $5d, " 87", $5d, $5d, " 91", $5d
 		!scr $5d, " 40", $5d, $5d, " 48", $5d, $5d, " 53", $5d, $5d, " 93", $5d
 		!scr $5d, " 70", $5d, $5d, " 79", $5d, $5d, " 88", $5d, $5d, " 92", $5d
 
-hirow3:		!scr $5d, "  9", $5d, $5d, " 29", $5d, $5d, "   ", $5d, $5d, " 17", $5d
+ichigh3:	!scr $5d, "  9", $5d, $5d, " 29", $5d, $5d, "   ", $5d, $5d, " 17", $5d
 		!scr $5d, " 13", $5d, $5d, " 12", $5d, $5d, " 11", $5d, $5d, "  8", $5d
 		!scr $5d, "  5", $5d, $5d, "  4", $5d, $5d, " 10", $5d, $5d, "  6", $5d
 		!scr $5d, "  7", $5d, $5d, "  2", $5d, $5d, "  1", $5d, $5d, " 84", $5d
 
 title:		!scr "CBM-II    LOW PROFILE   970148.A.6   CYCLES: 0"
 
-		!byte $5d, $20, $37, $39, $5d, $5d
-		!byte $20, $37, $38, $5d, $5d, $20, $37, $37
-		!byte $5d, $5d, $20, $37, $36, $5d, $5d, $20
-		!byte $37, $35, $5d, $5d, $20, $37, $34, $5d
-		!byte $5d, $20, $37, $33, $5d, $5d, $20, $37
-		!byte $32, $5d, $5d, $20, $37, $31, $5d, $5d
-		!byte $20, $37, $30, $5d, $5d, $20, $36, $39
-		!byte $5d, $5d, $20, $36, $38, $5d, $5d, $20
-		!byte $36, $37, $5d, $5d, $20, $36, $36, $5d
-		!byte $5d, $20, $36, $35, $5d, $5d, $20, $36
-		!byte $34, $5d, $5d, $20, $35, $32, $5d, $5d
-		!byte $20, $35, $31, $5d, $5d, $20, $35, $30
-		!byte $5d, $5d, $20, $34, $39, $5d, $5d, $20
-		!byte $34, $38, $5d, $5d, $20, $34, $37, $5d
-		!byte $5d, $20, $34, $36, $5d, $5d, $20, $34
-		!byte $35, $5d, $5d, $20, $33, $36, $5d, $5d
-		!byte $20, $33, $35, $5d, $5d, $20, $33, $34
-		!byte $5d, $5d, $20, $33, $33, $5d, $5d, $20
-		!byte $33, $32, $5d, $5d, $20, $33, $31, $5d
-		!byte $5d, $20, $33, $30, $5d, $5d, $20, $32
-		!byte $39, $5d, $5d, $20, $35, $38, $5d, $5d
-		!byte $20, $32, $36, $5d, $5d, $20, $20, $20
-		!byte $5d, $5d, $20, $36, $31, $5d, $5d, $20
-		!byte $36, $30, $5d, $5d, $20, $35, $39, $5d
-		!byte $5d, $20, $20, $31, $5d, $5d, $20, $20
-		!byte $32, $5d, $5d, $20, $20, $33, $5d, $5d
-		!byte $20, $20, $34, $5d, $5d, $20, $20, $37
-		!byte $5d, $5d, $20, $31, $30, $5d, $5d, $20
-		!byte $31, $35, $5d, $5d, $20, $31, $36, $5d
-		!byte $5d, $20, $31, $37, $5d, $5d, $20, $32
-		!byte $38, $5d
+iclow1:		!scr $5d, " 79", $5d, $5d, " 78", $5d, $5d, " 77", $5d, $5d, " 76", $5d
+		!scr $5d, " 75", $5d, $5d, " 74", $5d, $5d, " 73", $5d, $5d, " 72", $5d
+		!scr $5d, " 71", $5d, $5d, " 70", $5d, $5d, " 69", $5d, $5d, " 68", $5d
+		!scr $5d, " 67", $5d, $5d, " 66", $5d, $5d, " 65", $5d, $5d, " 64", $5d
+
+iclow2:		!scr $5d, " 52", $5d, $5d, " 51", $5d, $5d, " 50", $5d, $5d, " 49", $5d
+		!scr $5d, " 48", $5d, $5d, " 47", $5d, $5d, " 46", $5d, $5d, " 45", $5d
+		!scr $5d, " 36", $5d, $5d, " 35", $5d, $5d, " 34", $5d, $5d, " 33", $5d
+		!scr $5d, " 32", $5d, $5d, " 31", $5d, $5d, " 30", $5d, $5d, " 29", $5d
+
+iclow3:		!scr $5d, " 58", $5d, $5d, " 26", $5d, $5d, "   ", $5d, $5d, " 61", $5d
+		!scr $5d, " 60", $5d, $5d, " 59", $5d, $5d, "  1", $5d, $5d, "  2", $5d
+		!scr $5d, "  3", $5d, $5d, "  4", $5d, $5d, "  7", $5d, $5d, " 10", $5d
+		!scr $5d, " 15", $5d, $5d, " 16", $5d, $5d, " 17", $5d, $5d, " 28", $5d
 ; ----------------------------------------------------------------------------
 ; io register addresses
 sid:		!byte $00, $da, $01, $da, $02, $da, $03, $da	; sid register
@@ -1895,44 +1878,28 @@ tpi1:		!byte $00, $de, $01, $de, $02, $de, $03, $de	; tpi1 register
 tpi2:		!byte $00, $df, $01, $df, $02, $df, $03, $df	; tpi2 register
 		!byte $04, $df, $05, $df, $06, $df, $07, $df
 
-lorow1:		!byte $52, $41, $4d, $20
-		!byte $53, $45, $47, $20, $24, $46, $52, $4f
-		!byte $4d, $53, $20, $53, $45, $47, $20, $24
-		!byte $46, $4c, $4f, $20, $41, $44, $52, $20
-		!byte $42, $59, $54, $45, $20, $54, $45, $53
-		!byte $54, $20, $48, $49, $20, $41, $44, $52
-		!byte $20, $42, $59, $54, $45, $20, $54, $45
-		!byte $53, $54, $20, $43, $48, $4b, $52, $42
-		!byte $52, $44, $20, $24, $35, $35, $2c, $20
-		!byte $24, $41, $41, $20, $41, $41, $2c, $20
-		!byte $24, $35, $35, $20
-lorow2:		!byte $4d, $41, $52, $43
-		!byte $48, $20, $49, $4e, $43, $20, $41, $44
-		!byte $52, $20, $24, $35, $41, $20, $44, $45
-		!byte $43, $20, $41, $44, $52, $20, $24, $41
-		!byte $35, $20, $35, $41, $20, $49, $4e, $43
-		!byte $20, $41, $44, $52, $20, $24, $46, $46
-		!byte $20, $44, $45, $43, $20, $41, $44, $52
-		!byte $20, $24, $30, $30, $20, $53, $54, $41
-		!byte $54, $49, $43, $20, $52, $41, $4d, $20
-		!byte $54, $45, $53, $54, $53, $20, $20, $36
-		!byte $35, $32, $36, $20
-lorow3:		!byte $54, $4f, $44, $20
-		!byte $54, $45, $53, $54, $53, $20, $20, $20
-		!byte $20, $36, $35, $32, $36, $20, $54, $49
-		!byte $4d, $45, $52, $53, $20, $54, $45, $53
-		!byte $54, $53, $20, $54, $4d, $52, $54, $4f
-		!byte $44, $54, $4e, $54, $36, $35, $32, $36
-		!byte $20, $36, $35, $32, $35, $20, $67, $31
-		!byte $36, $30, $20, $67, $31, $36, $31, $20
-		!byte $36, $38, $34, $35, $20, $36, $35, $38
-		!byte $31, $20, $36, $35, $35, $31, $20, $31
-		!byte $34, $38, $39, $20, $31, $34, $38, $38
-		!byte $20, $36, $35, $32, $35, $2a, $2d, $2d
-		!byte $2d, $2d, $2d, $2d, $2d, $2d, $2d, $2d
-		!byte $2d, $2a, $53, $45, $47, $4d, $45, $4e
-		!byte $54, $3a, $54, $45, $53, $54, $45, $58
-		!byte $45, $43, $55, $54, $45
+ramsegf:	!scr "RAM SEG $F"
+romssegf:	!scr "ROMS SEG $F"
+loadrtest:	!scr "LO ADR BYTE TEST "
+hiadrtest:	!scr "HI ADR BYTE TEST "
+chkrbrd:	!scr "CHKRBRD $55, $AA "
+aa55:		!scr "AA, $55 "
+marchinc:	!scr "MARCH INC ADR $5A "
+decadra5:		!scr "DEC ADR $A5 "
+dec5a:		!scr "5A "
+incadr:		!scr "INC ADR $FF "
+decadr00:	!scr "DEC ADR $00 "
+staticram:	!scr "STATIC RAM TESTS  "
+todtests:	!scr "6526 TOD TESTS    "
+timertsts:	!scr "6526 TIMERS TESTS "
+tmr:		!scr "TMR"
+tod:		!scr "TOD"
+tnt:		!scr "TNT"
+ics:		!scr "6526 6525 ", $67, "160 ", $67, "161 6845 6581 6551 1489 1488 6525"
+line:		!scr "*-----------*"
+segment:	!scr "SEGMENT:"
+test:		!scr "TEST"
+execute:	!scr "EXECUTE"
 ; ----------------------------------------------------------------------------
 screen_pos_lo:	!byte $41, $69, $71, $99
 screen_pos_hi:	!byte $d1, $d1, $d3, $d3
@@ -1949,22 +1916,22 @@ scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11
 		!byte 79, 79, 79,  2,  2, 17, 17, 39
 		!byte 39
 ; screendata addresses lo
-scrdata_lo:	!byte <title, $ea, $f4, $78, $c8, $18, $e3, $e3
-		!byte $e3, $e3, $e4, $e4, $e4, $e4, $ff, $10
-		!byte $21, $32, $3a, $4c, $58, $5b, $67, $f0
-		!byte $f0, $f0, $f0, $f0, $f0, $f0, $f0, $f0
-		!byte $f0, $f0, $f0, $fc, $fc, $fc, $fc, $f8
-		!byte $f8, $f8, $f8, $b2, $73, $a9, <bchksum, <high
-		!byte <hirow1, <hirow2, <hirow3, $ac, $af, $85, $97, <noram
+scrdata_lo:	!byte <title, <ramsegf, <romssegf, <iclow1, <iclow2, <iclow3, <line, <line
+		!byte <line, <line, <(line+1), <(line+1), <(line+1), <(line+1), <loadrtest, <hiadrtest
+		!byte <chkrbrd, <aa55, <marchinc, <decadra5, <dec5a, <incadr, <decadr00, <segment
+		!byte <segment, <segment, <segment, <segment, <segment, <segment, <segment, <segment
+		!byte <segment, <segment, <segment, <execute, <execute, <execute, <execute, <test
+		!byte <test, <test, <test, <ics, <staticram, <tmr, <bchksum, <high
+		!byte <ichigh1, <ichigh2, <ichigh3, <tod, <tnt, <todtests, <timertsts, <noram
 		!byte <noram
 ; screendata addresses hi
-scrdata_hi:	!byte >title, $2f, $2f, $2e, $2e, $2f, $30, $30
-		!byte $30, $30, $30, $30, $30, $30, $2f, $30
-		!byte $30, $30, $30, $30, $30, $30, $30, $30
-		!byte $30, $30, $30, $30, $30, $30, $30, $30
-		!byte $30, $30, $30, $30, $30, $30, $30, $30
-		!byte $30, $30, $30, $30, $30, $30, >bchksum, >high
-		!byte >hirow1, >hirow2, >hirow3, $30, $30, $30, $30, >noram
+scrdata_hi:	!byte >title, >ramsegf, >romssegf, >iclow1, >iclow2, >iclow3, >line, >line
+		!byte >line, >line, >(line+1), >(line+1), >(line+1), >(line+1), >loadrtest, >hiadrtest
+		!byte >chkrbrd, >aa55, >marchinc, >decadra5, >dec5a, >incadr, >decadr00, >segment
+		!byte >segment, >segment, >segment, >segment, >segment, >segment, >segment, >segment
+		!byte >segment, >segment, >segment, >execute, >execute, >execute, >execute, >test
+		!byte >test, >test, >test, >ics, >staticram, >tmr, >bchksum, >high
+		!byte >ichigh1, >ichigh2, >ichigh3, >tod, >tnt, >todtests, >timertsts, >noram
 		!byte >noram
 ; screen RAM addresses lo
 screen_lo:	!byte $00, $00, $11, $90, $c0, $f0, $a2, $ca
