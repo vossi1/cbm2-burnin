@@ -6,7 +6,9 @@
 ; ***************************************** CONSTANTS *********************************************
 SYSTEMBANK		= $0f		; #SYSTEMBANK
 ; TPI register
-cr			= 6 *2		; TPI control register
+pc			= $02 *2	; TPI port c
+mir			= $05 *2	; TPI interrupt mask register
+cr			= $06 *2	; TPI control register
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
@@ -122,35 +124,38 @@ l2053:	ldy #$d2
 	sta IndirectBank
 	ldy #$00
 	lda (tpi2+cr),y
-	and #$fe			; mc=0 disable interrupt controller
+	and #$fe			; tpi2 mc=0 disable interrupt controller
 	sta (tpi2+cr),y
 	lda #$00
-	sta ($79),y
-	lda ($73),y
-	and #$80
-	bne l20d1
+	sta (tpi2+mir),y		; tpi2 mir=0 mask all interrrupts
+	lda (tpi2+pc),y			; read tpi2 port c
+	and #$80			; isolate bit#7 low/high profile
+	bne hiprof			; branch if high profile
+; low profile
 	ldx #$0b
 	stx $4c
 	ldx #$03
 	stx $4d
-	bne l20f1
-l20d1:	ldx #$2f
-	jsr drawtxt			; sub: draw screen text
-	ldx #$08
+	bne l20f1			; jump always
+; high profile
+hiprof:	ldx #$2f
+	jsr drawtxt			; sub: draw screen text "HIGH"
+	ldx #$08			; draw 8 *---- ----* lines
 	stx $4c
 	ldx #$06
 	stx $4d
-l20de:	ldx $4d
-	jsr l2d03
+-	ldx $4d
+	jsr drawpur			; sub: draw without and
 	inc $4d
 	dec $4c
-	bne l20de
+	bne -
 	ldx #$03
 	stx $4c
 	ldx #$30
 	stx $4d
+;
 l20f1:	ldx $4d
-	jsr l2d03
+	jsr drawpur
 	inc $4d
 	dec $4c
 	bne l20f1
@@ -398,7 +403,7 @@ l22ca:	lda $4a
 	cmp $1e
 	beq l22d5
 	ldx #$2e
-	jsr l2cf8
+	jsr drwor80
 l22d5:	lda $4a
 	jsr l2c28
 	sty $4a
@@ -1772,24 +1777,25 @@ cpydata:sta pointer3
 	bpl -
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2cf8:	pha
+; draw with OR $80
+drwor80:pha
 	tya
 	pha
 	txa
 	pha
 	lda #$80
 	sta temp_or_value
-	bne l2d19
-l2d03:	pha
+	bne drawtx2			; jump always
+; draw pure withour AND
+drawpur:pha
 	tya
 	pha
 	txa
 	pha
 	lda #$00
 	sta temp_or_value
-	lda #$ff
-	bne l2d1b
+	lda #$ff			; data and value
+	bne drawtx1			; jump always
 ; draw screen text
 drawtxt:pha				; save regs
 	tya
@@ -1798,8 +1804,8 @@ drawtxt:pha				; save regs
 	pha
 	lda #$00			; data or value
 	sta temp_or_value
-l2d19:	lda #$3f			; data and value
-l2d1b:	sta temp_and_value
+drawtx2:lda #$3f			; data and value
+drawtx1	sta temp_and_value
 	lda IndirectBank		; remember indirect bank
 	sta actual_indirbank
 	lda scrdata_count,x
@@ -1919,14 +1925,14 @@ bchksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
 noram:		!scr " *************  NO RAM  *************** "
 ; ----------------------------------------------------------------------------
 ; screendata count -1
-scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11
-		!byte 11, 11, 11, 11, 11, 11, 16, 16
-		!byte 16,  7, 17, 11,  2, 11, 11,  7
-		!byte  7,  7,  7,  7,  7,  7,  7,  7
-		!byte  7,  7,  7,  6,  6,  6,  6,  3
-		!byte  3,  3,  3, 48, 17,  2, 31,  3
-		!byte 79, 79, 79,  2,  2, 17, 17, 39
-		!byte 39
+scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11	; data $00-$07
+		!byte 11, 11, 11, 11, 11, 11, 16, 16	; data $08-$0f
+		!byte 16,  7, 17, 11,  2, 11, 11,  7	; data $10-$17
+		!byte  7,  7,  7,  7,  7,  7,  7,  7	; data $18-$1f
+		!byte  7,  7,  7,  6,  6,  6,  6,  3	; data $20-$27
+		!byte  3,  3,  3, 48, 17,  2, 31,  3	; data $28-$2f
+		!byte 79, 79, 79,  2,  2, 17, 17, 39	; data $30-$37
+		!byte 39				; data $38
 ; screendata addresses lo
 scrdata_lo:	!byte <title, <ramsegf, <romssegf, <iclow1, <iclow2, <iclow3, <line, <line
 		!byte <line, <line, <(line+1), <(line+1), <(line+1), <(line+1), <loadrtest, <hiadrtest
