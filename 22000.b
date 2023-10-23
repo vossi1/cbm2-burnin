@@ -9,6 +9,7 @@ SYSTEMBANK		= $0f		; #SYSTEMBANK
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
 !addr ScreenRAM		= $d000		; Screen RAM
+!addr CRT		= $d800		; CRT
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
 !addr screen_pointer	= $14		; 16bit pointer screen
@@ -20,6 +21,15 @@ SYSTEMBANK		= $0f		; #SYSTEMBANK
 !addr temp_dec_value	= $55		; temp dec value
 !addr temp_or_value	= $55		; temp screen data or value
 !addr actual_indirbank	= $58		; actual indirect bank
+!addr pointer3		= $5b		; 16bit pointer
+!addr crtadr		= $9f		; pointer crt address register 
+!addr crtdata		= $a1		; pointer crt data register 
+; io-pointer multi-usage!
+!addr tpi1		= $5f		; 16 pointer to TPI1 regs
+!addr sid		= $5f		; 58 pointer to SID regs
+!addr tpi2		= $6f		; 16 pointer to TPI2 regs
+!addr cia		= $7f		; 32 pointer to CIA regs
+!addr acia		= $a3		; 8 pointer to ACIA regs
 ; ******************************************* CODE ************************************************
 *= $2000
 	sei
@@ -105,7 +115,7 @@ l2053:	ldy #$d2
 	jsr drawtxt			; sub: draw screen text
 	ldx #$2b
 	jsr drawtxt			; sub: draw screen text
-	jsr l2c60
+	jsr itpi2pt			; sub: init tpi2 pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
 	ldy #$00
@@ -160,9 +170,9 @@ l2113:	lda l32f9,x
 	sta $4d
 l211f:	ldx $4a
 	lda l3306,x
-	sta $5b
+	sta pointer3
 	lda l3313,x
-	sta $5c
+	sta pointer3+1
 	lda l3320,x
 	sta $5d
 	lda l332d,x
@@ -170,7 +180,7 @@ l211f:	ldx $4a
 	lda CodeBank
 	sta IndirectBank
 	ldy $4c
-	lda ($5b),y
+	lda (pointer3),y
 	sta pointer1
 	lda ($5d),y
 	sta pointer1+1
@@ -208,8 +218,8 @@ drawics:sta pointer1
 	sec
 	sbc #$01
 	sta $3e
-wrsclp2:ldy #$04
-wrsclp1:lda actual_codebank
+drawlp2:ldy #$04
+drawlp1:lda actual_codebank
 	sta IndirectBank		; set indirect bank to actual codebank
 	lda (pointer2),y
 	dey
@@ -221,11 +231,11 @@ wrsclp1:lda actual_codebank
 	dey
 	sty $3e
 	ldy $3d
-	bpl wrsclp1
+	bpl drawlp1
 	ldx $1f
 	dex
 	stx $1f
-	bne wrsclp2
+	bne drawlp2
 	rts
 ; ----------------------------------------------------------------------------
 ; set pointer2 to chip graphics address
@@ -253,8 +263,8 @@ clrsclp:sta (pointer1),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-l21cb:	jsr l2ca7
-	jsr l2c84
+l21cb:	jsr isidpt			; sub: init sid pointer
+	jsr icrtpt			; sub: init crt pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
 	jsr l2275
@@ -453,18 +463,18 @@ l2335:	clc
 	lda $39
 	clc
 	adc #$a1
-	sta $5b
+	sta pointer3
 	lda #$d6
 	adc #$00
-	sta $5c
+	sta pointer3+1
 	lda $4c
 	jsr l2c28
 	sty $4a
 	ldy #$00
-	sta ($5b),y
+	sta (pointer3),y
 	iny
 	lda $4a
-	sta ($5b),y
+	sta (pointer3),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -480,7 +490,7 @@ l2372:	sei
 	ldx #$36
 	jsr drawtxt			; sub: draw screen text
 	jsr l2cb9
-	jsr l2c4e
+	jsr iciapt			; sub: init cia pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
 	jsr l2586
@@ -682,9 +692,9 @@ l2508:	lda $16
 	lda #$ff
 	sta $1c
 	lda #$bf
-	sta $5b
+	sta pointer3
 	lda #$d5
-	sta $5c
+	sta pointer3+1
 	jsr l2b3e
 	lda $1b
 	ldx #$2d
@@ -761,7 +771,7 @@ l258c:	ldy #$00
 l2592:	sei
 	ldx #$35
 	jsr drawtxt			; sub: draw screen text
-	jsr l2c4e
+	jsr iciapt			; sub: init cia pointer
 	jsr l2586
 	ldy #$00
 	sty $16
@@ -853,9 +863,9 @@ l264f:	cmp #$04
 l2653:	lda #$ff
 	sta $1b
 	lda #$bf
-	sta $5b
+	sta pointer3
 	lda #$d5
-	sta $5c
+	sta pointer3+1
 	jsr l2b3e
 	lda $1c
 	bne l266f
@@ -1391,39 +1401,39 @@ l2a71:	stx IndirectBank
 	sty $4a
 	ldy #$00
 	ldx #$e0
-	stx $5b
+	stx pointer3
 	ldx #$d6
-	stx $5c
-	sta ($5b),y
+	stx pointer3+1
+	sta (pointer3),y
 	iny
 	lda $4a
-	sta ($5b),y
+	sta (pointer3),y
 	lda actual_indirbank
 	jsr l2c28
 	tya
 	ldy #$03
-	sta ($5b),y
+	sta (pointer3),y
 	lda pointer1+1
 	jsr l2c28
 	sty $4a
 	ldy #$05
-	sta ($5b),y
+	sta (pointer3),y
 	iny
 	lda $4a
-	sta ($5b),y
+	sta (pointer3),y
 	lda $29
 	jsr l2c28
 	sty $4a
 	ldy #$07
-	sta ($5b),y
+	sta (pointer3),y
 	iny
 	lda $4a
-	sta ($5b),y
+	sta (pointer3),y
 	lda CodeBank
 	jsr l2c28
 	tya
 	ldy #$0b
-	sta ($5b),y
+	sta (pointer3),y
 	ldy actual_indirbank
 	cpy #$0f
 	beq l2b1c
@@ -1434,24 +1444,24 @@ l2a71:	stx IndirectBank
 	jsr calc2
 	tay
 	lda #$31
-	sta $5b
+	sta pointer3
 	lda #$d7
-	sta $5c
-	lda ($5b),y
+	sta pointer3+1
+	lda (pointer3),y
 	bmi l2ae3
 	ldx #$13
-l2ad9:	lda ($5b),y
+l2ad9:	lda (pointer3),y
 	ora #$80
-	sta ($5b),y
+	sta (pointer3),y
 	iny
 	dex
 	bne l2ad9
 l2ae3:	ldy actual_indirbank
 	dey
 	lda screen_pos_lo,y
-	sta $5b
+	sta pointer3
 	lda screen_pos_hi,y
-	sta $5c
+	sta pointer3+1
 	ldx #$08
 	stx $56
 l2af4:	lda $27
@@ -1462,10 +1472,10 @@ l2af4:	lda $27
 	jsr l2b3e
 l2aff:	lda #$05
 	clc
-	adc $5b
-	sta $5b
+	adc pointer3
+	sta pointer3
 	bcc l2b0a
-	inc $5c
+	inc pointer3+1
 l2b0a:	ldx $56
 	dex
 	stx $56
@@ -1482,15 +1492,15 @@ l2b1c:	lda pointer1+1
 	and #$f0
 	bne l2b2f
 	lda #$a1
-	sta $5b
+	sta pointer3
 	lda #$d5
-	sta $5c
+	sta pointer3+1
 	jsr l2b3e
 	bmi l2b11
 l2b2f:	lda #$a6
-	sta $5b
+	sta pointer3
 	lda #$d5
-	sta $5c
+	sta pointer3+1
 	lda CodeBank
 	jsr l2b40
 	bmi l2b11
@@ -1499,11 +1509,11 @@ l2b40:	sta IndirectBank
 	tya
 	pha
 	ldy #$00
-	lda ($5b),y
+	lda (pointer3),y
 	bmi l2b7b
-	lda $5b
+	lda pointer3
 	sta $5d
-	lda $5c
+	lda pointer3+1
 	sta $5e
 	ldx #$02
 l2b54:	ldy #$02
@@ -1660,70 +1670,70 @@ mul5:	clc
 	adc $4a
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2c4e:	lda #$7f
+; init cia pointer
+iciapt:	lda #cia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
-	lda #$a2
-	ldx #$2f
+	lda #<ciaregs
+	ldx #>ciaregs
 	ldy #$1f
-	jsr l2ce8
+	jsr cpydata			; sub: copy data
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2c60:	lda #$6f
+; init tpi2 pointer
+itpi2pt:lda #tpi2
 	sta pointer1
 	lda #$00
 	sta pointer1+1
-	lda #$da
-	ldx #$2f
+	lda #<tpi2regs
+	ldx #>tpi2regs
 	ldy #$0f
-	jsr l2ce8
+	jsr cpydata			; sub: copy data
 	rts
 ; ----------------------------------------------------------------------------
-; 
-	lda #$5f
+; init tpi1 pointer - UNUSED
+	lda #tpi1
 	sta pointer1
 	lda #$00
 	sta pointer1+1
-	lda #$ca
-	ldx #$2f
+	lda #<tpi1regs
+	ldx #>tpi1regs
 	ldy #$0f
-	jsr l2ce8
+	jsr cpydata			; sub: copy data
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2c84:	lda #$00
-	sta $9f
-	lda #$d8
-	sta $a0
-	lda #$01
-	sta $a1
-	lda #$d8
-	sta $a2
+; init crt pointer
+icrtpt:	lda #<CRT
+	sta crtadr
+	lda #>CRT
+	sta crtadr+1
+	lda #<(CRT+1)
+	sta crtdata
+	lda #>(CRT+1)
+	sta crtdata+1
 	rts
 ; ----------------------------------------------------------------------------
-; 
-	lda #$a3
+; init acia pointer - UNUSED
+	lda #acia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
-	lda #$c2
-	ldx #$2f
+	lda #<aciaregs
+	ldx #>aciaregs
 	ldy #$07
-	jsr l2ce8
+	jsr cpydata			; sub: copy data
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2ca7:	lda #$5f
+; init sid pointer
+isidpt:	lda #sid
 	sta pointer1
 	lda #$00
 	sta pointer1+1
-	lda #$68
-	ldx #$2f
+	lda #<sidregs
+	ldx #>sidregs
 	ldy #$39
-	jsr l2ce8
+	jsr cpydata			; sub: copy data
 	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -1749,12 +1759,12 @@ l2cb9:	lda #$f0
 	sta $f5
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2ce8:	sta $5b
-	stx $5c
+; copy data y+1 bytes from ax to pointer1
+cpydata:sta pointer3
+	stx pointer3+1
 	lda CodeBank
 	sta IndirectBank
--	lda ($5b),y
+-	lda (pointer3),y
 	sta (pointer1),y
 	dey
 	bpl -
@@ -1801,7 +1811,7 @@ l2d2d:	sta screendata_pointer+1
 	lda screen_hi,x
 	sta screen_pointer+1
 	ldx #SYSTEMBANK
-drwtxlp:lda CodeBank
+-	lda CodeBank
 	sta IndirectBank
 	lda (screendata_pointer),y
 	and temp_and_value
@@ -1809,7 +1819,7 @@ drwtxlp:lda CodeBank
 	stx IndirectBank
 	sta (screen_pointer),y
 	dey
-	bpl drwtxlp
+	bpl -
 	lda actual_indirbank
 	sta IndirectBank		; restore indirect bank
 	pla				; restore regs
@@ -1856,7 +1866,7 @@ iclow3:		!scr $5d, " 58", $5d, $5d, " 26", $5d, $5d, "   ", $5d, $5d, " 61", $5d
 		!scr $5d, " 15", $5d, $5d, " 16", $5d, $5d, " 17", $5d, $5d, " 28", $5d
 ; ----------------------------------------------------------------------------
 ; io register addresses
-sid:		!byte $00, $da, $01, $da, $02, $da, $03, $da	; sid register
+sidregs:	!byte $00, $da, $01, $da, $02, $da, $03, $da	; sid register
 		!byte $04, $da, $05, $da, $06, $da, $07, $da
 		!byte $08, $da, $09, $da, $0a, $da, $0b, $da
 		!byte $0c, $da, $0d, $da, $0e, $da, $0f, $da
@@ -1865,17 +1875,17 @@ sid:		!byte $00, $da, $01, $da, $02, $da, $03, $da	; sid register
 		!byte $18, $da, $19, $da, $1a, $da, $1b, $da
 		!byte $1c, $da
 
-cia:		!byte $00, $dc, $01, $dc, $02, $dc, $03, $dc	; cia register
+ciaregs:	!byte $00, $dc, $01, $dc, $02, $dc, $03, $dc	; cia register
 		!byte $04, $dc, $05, $dc, $06, $dc, $07, $dc
 		!byte $08, $dc, $09, $dc, $0a, $dc, $0b, $dc
 		!byte $0c, $dc, $0d, $dc, $0e, $dc, $0f, $dc
 
-acia:		!byte $00, $dd, $01, $dd, $02, $dd, $03, $dd	; acia register
+aciaregs:	!byte $00, $dd, $01, $dd, $02, $dd, $03, $dd	; acia register
 
-tpi1:		!byte $00, $de, $01, $de, $02, $de, $03, $de	; tpi1 register
+tpi1regs:	!byte $00, $de, $01, $de, $02, $de, $03, $de	; tpi1 register
 		!byte $04, $de, $05, $de, $06, $de, $07, $de
 
-tpi2:		!byte $00, $df, $01, $df, $02, $df, $03, $df	; tpi2 register
+tpi2regs:	!byte $00, $df, $01, $df, $02, $df, $03, $df	; tpi2 register
 		!byte $04, $df, $05, $df, $06, $df, $07, $df
 
 ramsegf:	!scr "RAM SEG $F"
@@ -1885,7 +1895,7 @@ hiadrtest:	!scr "HI ADR BYTE TEST "
 chkrbrd:	!scr "CHKRBRD $55, $AA "
 aa55:		!scr "AA, $55 "
 marchinc:	!scr "MARCH INC ADR $5A "
-decadra5:		!scr "DEC ADR $A5 "
+decadra5:	!scr "DEC ADR $A5 "
 dec5a:		!scr "5A "
 incadr:		!scr "INC ADR $FF "
 decadr00:	!scr "DEC ADR $00 "
