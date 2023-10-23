@@ -5,6 +5,8 @@
 !to "load 1.prg", cbm
 ; ***************************************** CONSTANTS *********************************************
 SYSTEMBANK		= $0f		; #SYSTEMBANK
+; TPI register
+cr			= 6 *2		; TPI control register
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
@@ -26,10 +28,10 @@ SYSTEMBANK		= $0f		; #SYSTEMBANK
 !addr crtdata		= $a1		; pointer crt data register 
 ; io-pointer multi-usage!
 !addr tpi1		= $5f		; 16 pointer to TPI1 regs
-!addr sid		= $5f		; 58 pointer to SID regs
-!addr tpi2		= $6f		; 16 pointer to TPI2 regs
-!addr cia		= $7f		; 32 pointer to CIA regs
-!addr acia		= $a3		; 8 pointer to ACIA regs
+!addr sid		= $5f		; 29 pointer to SID regs
+!addr tpi2		= $6f		; 8 pointer to TPI2 regs
+!addr cia		= $7f		; 16 pointer to CIA regs
+!addr acia		= $a3		; 4 pointer to ACIA regs
 ; ******************************************* CODE ************************************************
 *= $2000
 	sei
@@ -119,9 +121,9 @@ l2053:	ldy #$d2
 	lda #SYSTEMBANK
 	sta IndirectBank
 	ldy #$00
-	lda ($7b),y
-	and #$fe
-	sta ($7b),y
+	lda (tpi2+cr),y
+	and #$fe			; mc=0 disable interrupt controller
+	sta (tpi2+cr),y
 	lda #$00
 	sta ($79),y
 	lda ($73),y
