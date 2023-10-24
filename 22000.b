@@ -5,6 +5,7 @@
 !to "load 1.prg", cbm
 ; ***************************************** CONSTANTS *********************************************
 SYSTEMBANK		= $0f		; #SYSTEMBANK
+FILL			= $aa
 ; TPI register
 pc			= $02 *2	; TPI port c
 mir			= $05 *2	; TPI interrupt mask register
@@ -21,11 +22,15 @@ cr			= $06 *2	; TPI control register
 !addr temp_and_value	= $2a		; temp screen data and value
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
+!addr temp2		= $4a		; temp
+!addr temp_count	= $4c		; temp/counter
+!addr temp1		= $4d		; temp
 !addr screendata_pointer= $37		; 16bit pointer screen data
 !addr temp_dec_value	= $55		; temp dec value
 !addr temp_or_value	= $55		; temp screen data or value
 !addr actual_indirbank	= $58		; actual indirect bank
 !addr pointer3		= $5b		; 16bit pointer
+!addr pointer4		= $5d		; 16bit pointer
 !addr crtadr		= $9f		; pointer crt address register 
 !addr crtdata		= $a1		; pointer crt data register 
 ; io-pointer multi-usage!
@@ -54,10 +59,10 @@ clrzplp:sta $0000,y
 	lda #$60
 	sta pointer1+1			; check from $6000
 	lda #$a5
-	sta $4a				; remember test byte $a5
+	sta temp2			; remember test byte $a5
 chkbklp:sta (pointer1),y
 	lda (pointer1),y
-	cmp $4a				; check if RAM here
+	cmp temp2			; check if RAM here
 	beq cbm256			; RAM in bank 3
 	iny
 	bne chkbklp			; check next byte
@@ -133,77 +138,80 @@ l2053:	ldy #$d2
 	bne hiprof			; branch if high profile
 ; low profile
 	ldx #$0b
-	stx $4c
-	ldx #$03
-	stx $4d
-	bne l20f1			; jump always
+	stx temp_count
+	ldx #$03			; lines *---- ----* and low-ics
+	stx temp1
+	bne drwiclp			; jump always
 ; high profile
 hiprof:	ldx #$2f
 	jsr drawtxt			; sub: draw screen text "HIGH"
-	ldx #$08			; draw 8 *---- ----* lines
-	stx $4c
-	ldx #$06
-	stx $4d
--	ldx $4d
+	ldx #$08
+	stx temp_count
+	ldx #$06			; lines *---- ----* 
+	stx temp1
+-	ldx temp1
 	jsr drawpur			; sub: draw without and
-	inc $4d
-	dec $4c
+	inc temp1
+	dec temp_count
 	bne -
 	ldx #$03
-	stx $4c
-	ldx #$30
-	stx $4d
-;
-l20f1:	ldx $4d
+	stx temp_count
+	ldx #$30			; high-ics
+	stx temp1
+; draw lines+ics low / ics only high
+drwiclp:ldx temp1
 	jsr drawpur
-	inc $4d
-	dec $4c
-	bne l20f1
+	inc temp1
+	dec temp_count
+	bne drwiclp
+; draw segment, execute, test
 	ldx #$14
-	stx $4c
-	ldx #$17
-	stx $4d
-l2104:	ldx $4d
+	stx temp_count
+	ldx #$17			; segment, execute, test
+	stx temp1
+-	ldx temp1
 	jsr drawtxt			; sub: draw screen text
-	inc $4d
-	dec $4c
-	bne l2104
-	ldx #$0c
-	stx $4a
-l2113:	lda l32f9,x
-	sta $4c
-	lda l333a,x
+	inc temp1
+	dec temp_count
+	bne -
+; draw multiple chars to screen positions from table
+	ldx #$0c			; char to draw
+	stx temp2
+--	lda pos_count,x			; positions to draw
+	sta temp_count
+	lda char,x
 	and #$3f
-	sta $4d
-l211f:	ldx $4a
-	lda l3306,x
+	sta temp1
+-	ldx temp2
+	lda screenposlo_lo,x		; load position table lo pointer
 	sta pointer3
-	lda l3313,x
+	lda screenposlo_hi,x
 	sta pointer3+1
-	lda l3320,x
-	sta $5d
-	lda l332d,x
-	sta $5e
+	lda screenposhi_lo,x		; load position table hi pointer
+	sta pointer4
+	lda screenposhi_hi,x
+	sta pointer4+1
 	lda CodeBank
 	sta IndirectBank
-	ldy $4c
-	lda (pointer3),y
+	ldy temp_count
+	lda (pointer3),y		; load screen postion
 	sta pointer1
-	lda ($5d),y
+	lda (pointer4),y
 	sta pointer1+1
 	lda #SYSTEMBANK
 	sta IndirectBank
-	lda $4d
+	lda temp1
 	ldy #$00
-	sta (pointer1),y
-	ldx $4c
+	sta (pointer1),y		; draw char to screen
+	ldx temp_count
 	dex
-	stx $4c
-	bpl l211f
-	ldx $4a
+	stx temp_count
+	bpl -				; next postion
+	ldx temp2
 	dex
-	stx $4a
-	bpl l2113
+	stx temp2
+	bpl --				; next char
+;
 	lda banks
 	cmp #$04
 	beq l216b
@@ -378,7 +386,7 @@ l2275:	ldy #$00
 l229e:	ldy #$47
 	lda #$00
 	sta pointer1
-	sta $4a
+	sta temp2
 	lda #$33
 	sta pointer1+1
 	sec
@@ -387,8 +395,8 @@ l229e:	ldy #$47
 	lda CodeBank
 	sta IndirectBank
 l22b2:	lda (pointer1),y
-	eor $4a
-	sta $4a
+	eor temp2
+	sta temp2
 	dey
 	bne l22b2
 	dec pointer1+1
@@ -397,16 +405,16 @@ l22b2:	lda (pointer1),y
 	lda $1d
 	bne l22ca
 	dec $1d
-	lda $4a
+	lda temp2
 	sta $1e
-l22ca:	lda $4a
+l22ca:	lda temp2
 	cmp $1e
 	beq l22d5
 	ldx #$2e
 	jsr drwor80
-l22d5:	lda $4a
+l22d5:	lda temp2
 	jsr l2c28
-	sty $4a
+	sty temp2
 	ldy #$00
 	ldx #$2e
 	stx pointer1
@@ -416,7 +424,7 @@ l22d5:	lda $4a
 	stx IndirectBank
 	sta (pointer1),y
 	iny
-	lda $4a
+	lda temp2
 	sta (pointer1),y
 	rts
 ; ----------------------------------------------------------------------------
@@ -453,15 +461,15 @@ l2323:	sty $39
 	adc pointer1+1
 	sta pointer1+1
 	lda #$00
-	sta $4c
+	sta temp_count
 	sta pointer1
 	tay
 l2335:	clc
 	lda (pointer1),y
-	adc $4c
+	adc temp_count
 	adc #$00
 	adc #$00
-	sta $4c
+	sta temp_count
 	dey
 	bne l2335
 	dec pointer1+1
@@ -474,18 +482,18 @@ l2335:	clc
 	lda #$d6
 	adc #$00
 	sta pointer3+1
-	lda $4c
+	lda temp_count
 	jsr l2c28
-	sty $4a
+	sty temp2
 	ldy #$00
 	sta (pointer3),y
 	iny
-	lda $4a
+	lda temp2
 	sta (pointer3),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-	lda $4c
+	lda temp_count
 	inc pointer1+1
 	cmp pointer1+1
 	beq l2371
@@ -1095,10 +1103,10 @@ l2805:	ldy $41
 	lda $40
 	sta pointer1+1
 l280b:	tya
-	sta $4c
+	sta temp_count
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2819
 	jsr l2a59
 l2819:	iny
@@ -1110,9 +1118,9 @@ l2819:	iny
 	ldx #$0f
 	jsr l2b7e
 l2829:	tya
-	sta $4c
+	sta temp_count
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2835
 	jsr l2a59
 l2835:	lda pointer1+1
@@ -1130,9 +1138,9 @@ l2842:	iny
 	ldx #$10
 	jsr l2b7e
 	lda #$55
-	sta $4c
+	sta temp_count
 	lda #$aa
-	sta $4d
+	sta temp1
 l285a:	lda (pointer1),y
 	eor pointer1+1
 	beq l2863
@@ -1140,7 +1148,7 @@ l285a:	lda (pointer1),y
 l2863:	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2870
 	jsr l2a59
 l2870:	iny
@@ -1151,7 +1159,7 @@ l2870:	iny
 l287a:	lda #$aa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l2887
 	jsr l2a59
 l2887:	iny
@@ -1163,24 +1171,24 @@ l2887:	iny
 	ldx #$11
 	jsr l2b7e
 l2897:	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l28a0
 	jsr l2a59
 l28a0:	lda #$aa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l28ad
 	jsr l2a59
 l28ad:	iny
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l28b7
 	jsr l2a59
 l28b7:	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l28c4
 	jsr l2a59
 l28c4:	iny
@@ -1194,7 +1202,7 @@ l28c4:	iny
 	ldx #$5a
 	stx $4e
 l28d8:	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l28e1
 	jsr l2a59
 l28e1:	txa
@@ -1205,7 +1213,7 @@ l28e1:	txa
 	jsr l2a59
 l28ed:	iny
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l28f7
 	jsr l2a59
 l28f7:	txa
@@ -1224,17 +1232,17 @@ l2903:	iny
 	ldx #$13
 	jsr l2b95
 	ldx #$5a
-	stx $4c
+	stx temp_count
 	ldx #$a5
-	stx $4d
+	stx temp1
 l291e:	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2927
 	jsr l2a59
 l2927:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l2933
 	jsr l2a59
 l2933:	dey
@@ -1245,13 +1253,13 @@ l2933:	dey
 	cmp $40
 	bne l291e
 l2940:	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2949
 	jsr l2a59
 l2949:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l2955
 	jsr l2a59
 l2955:	dey
@@ -1261,13 +1269,13 @@ l2955:	dey
 	jsr l2b95
 	ldx #$5a
 l2961:	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l296a
 	jsr l2a59
 l296a:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2976
 	jsr l2a59
 l2976:	dey
@@ -1278,13 +1286,13 @@ l2976:	dey
 	cmp $40
 	bne l2961
 l2983:	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l298c
 	jsr l2a59
 l298c:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2998
 	jsr l2a59
 l2998:	dey
@@ -1295,7 +1303,7 @@ l2998:	dey
 	ldx #$ff
 	stx $4e
 l29a6:	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l29af
 	jsr l2a59
 l29af:	txa
@@ -1313,17 +1321,17 @@ l29bb:	iny
 	ldx #$16
 	jsr l2b95
 	ldx #$00
-	stx $4c
+	stx temp_count
 	ldx #$ff
-	stx $4d
+	stx temp1
 l29d3:	txa
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l29dd
 	jsr l2a59
 l29dd:	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l29e8
 	jsr l2a59
 l29e8:	dey
@@ -1335,12 +1343,12 @@ l29e8:	dey
 	bne l29d3
 l29f5:	txa
 	lda (pointer1),y
-	eor $4d
+	eor temp1
 	beq l29ff
 	jsr l2a59
 l29ff:	sta (pointer1),y
 	lda (pointer1),y
-	eor $4c
+	eor temp_count
 	beq l2a0a
 	jsr l2a59
 l2a0a:	dey
@@ -1405,7 +1413,7 @@ l2a59:	clv
 	bne l2a71
 l2a6f:	ldx #SYSTEMBANK
 l2a71:	stx IndirectBank
-	sty $4a
+	sty temp2
 	ldy #$00
 	ldx #$e0
 	stx pointer3
@@ -1413,7 +1421,7 @@ l2a71:	stx IndirectBank
 	stx pointer3+1
 	sta (pointer3),y
 	iny
-	lda $4a
+	lda temp2
 	sta (pointer3),y
 	lda actual_indirbank
 	jsr l2c28
@@ -1422,19 +1430,19 @@ l2a71:	stx IndirectBank
 	sta (pointer3),y
 	lda pointer1+1
 	jsr l2c28
-	sty $4a
+	sty temp2
 	ldy #$05
 	sta (pointer3),y
 	iny
-	lda $4a
+	lda temp2
 	sta (pointer3),y
 	lda $29
 	jsr l2c28
-	sty $4a
+	sty temp2
 	ldy #$07
 	sta (pointer3),y
 	iny
-	lda $4a
+	lda temp2
 	sta (pointer3),y
 	lda CodeBank
 	jsr l2c28
@@ -1519,29 +1527,29 @@ l2b40:	sta IndirectBank
 	lda (pointer3),y
 	bmi l2b7b
 	lda pointer3
-	sta $5d
+	sta pointer4
 	lda pointer3+1
-	sta $5e
+	sta pointer4+1
 	ldx #$02
 l2b54:	ldy #$02
-l2b56:	lda ($5d),y
+l2b56:	lda (pointer4),y
 	ora #$80
-	sta ($5d),y
+	sta (pointer4),y
 	dey
 	bpl l2b56
 	lda #$50
 	clc
-	adc $5d
-	sta $5d
+	adc pointer4
+	sta pointer4
 	bcc l2b6a
-	inc $5e
+	inc pointer4+1
 l2b6a:	dex
 	bne l2b54
 	ldy #$02
 l2b6f:	lda chip_bad,y
 	and #$3f
 	ora #$80
-	sta ($5d),y
+	sta (pointer4),y
 	dey
 	bpl l2b6f
 l2b7b:	pla
@@ -1577,7 +1585,7 @@ l2ba5:	ldy $25
 ; ----------------------------------------------------------------------------
 ; 
 l2bad:	stx $34
-	stx $4a
+	stx temp2
 	ldx IndirectBank
 	stx actual_indirbank
 	ldy #$00
@@ -1597,18 +1605,18 @@ l2bbf:	ldx $31
 	inc $2d
 	dec $34
 	bne l2bbf
-	lda $4a
+	lda temp2
 	sta $34
 	lda #$00
 	sta $11
 	ldy $3d
-	lda $4d
+	lda temp1
 	ora $2c
 	bne l2be8
 	ldy #$12
-l2be8:	lda $4c
+l2be8:	lda temp_count
 	sta $33
-	lda $4d
+	lda temp1
 	sta $2d
 l2bf0:	ldx $31
 	stx IndirectBank
@@ -1634,14 +1642,14 @@ l2bf0:	ldx $31
 ; 
 l2c16:	sta $31
 	stx $33
-	stx $4c
+	stx temp_count
 	sty $32
 	rts
 ; ----------------------------------------------------------------------------
 ; 
 l2c1f:	sta $2b
 	stx $2d
-	stx $4d
+	stx temp1
 	sty $2c
 	rts
 ; ----------------------------------------------------------------------------
@@ -1671,10 +1679,10 @@ calc2:	jsr mul5
 ; ----------------------------------------------------------------------------
 ; 
 mul5:	clc
-	sta $4a
+	sta temp2
 	asl
 	asl
-	adc $4a
+	adc temp2
 	rts
 ; ----------------------------------------------------------------------------
 ; init cia pointer
@@ -1980,37 +1988,50 @@ chip_bad:	!byte 'B', 'A', 'D'			; BAD
 chip_data_lo:	!byte <chip_top, <chip_u, <chip_ok ,<chip_bottom ,<chip_bad
 chip_data_hi:	!byte >chip_top, >chip_u, >chip_ok ,>chip_bottom ,>chip_bad
 ; ----------------------------------------------------------------------------
-; 
-		!byte $15, $3d, $45, $6d, $52
-		!byte $d1, $d1, $d3, $d3, $d5, $b8, $10, $38
-		!byte $40, $68, $42, $92, $d0, $d1, $d1, $d3
-		!byte $d3, $d7, $d7, $e0, $0b, $33, $3b, $63
-		!byte $56, $a6, $d0, $d1, $d1, $d3, $d3, $d7
-		!byte $d7, $06, $2e, $e8, $36, $5e, $6a, $ba
-		!byte $d1, $d1, $d2, $d3, $d3, $d7, $d7, $01
-		!byte $29, $10, $31, $59, $7e, $ce, $d1, $d1
-		!byte $d3, $d3, $d3, $d7, $d7, $fc, $24, $2c
-		!byte $54, $d0, $d1, $d3, $d3, $f7, $1f, $27
-		!byte $4f, $d0, $d1, $d3, $d3, $f2, $1a, $22
-		!byte $4a, $d0, $d1, $d3, $d3, $6b, $d5, $66
-		!byte $d5, $57, $d5, $61, $d5, $ad, $4c, $4d
-		!byte $d5, $d6, $d6
+; char screen positions
+pos0lo:		!byte $15, $3d, $45, $6d, $52
+pos0hi:		!byte $d1, $d1, $d3, $d3, $d5
+pos1lo:		!byte $b8, $10, $38, $40, $68, $42, $92
+pos1hi:		!byte $d0, $d1, $d1, $d3, $d3, $d7, $d7
+pos2lo:		!byte $e0, $0b, $33, $3b, $63, $56, $a6
+pos2hi:		!byte $d0, $d1, $d1, $d3, $d3, $d7, $d7
+pos3lo:		!byte $06, $2e, $e8, $36, $5e, $6a, $ba
+pos3hi:		!byte $d1, $d1, $d2, $d3, $d3, $d7, $d7
+pos4lo:		!byte $01, $29, $10, $31, $59, $7e, $ce
+pos4hi:		!byte $d1, $d1, $d3, $d3, $d3, $d7, $d7
+pos5lo:		!byte $fc, $24, $2c, $54
+pos5hi:		!byte $d0, $d1, $d3, $d3
+pos6lo:		!byte $f7, $1f, $27, $4f
+pos6hi:		!byte $d0, $d1, $d3, $d3
+pos7lo:		!byte $f2, $1a, $22, $4a
+pos7hi:		!byte $d0, $d1, $d3, $d3
+pos8lo:		!byte $6b
+pos8hi:		!byte $d5
+posAlo:		!byte $66
+posAhi:		!byte $d5
+posDlo:		!byte $57
+posDhi:		!byte $d5
+posElo:		!byte $61
+posEhi:		!byte $d5
+pos_lo:		!byte $ad, $4c, $4d
+pos_hi:		!byte $d5, $d6, $d6
+; ----------------------------------------------------------------------------
+; char count -1
+pos_count:	!byte $04, $06, $06, $06, $06, $03, $03, $03, $00, $00, $00, $00, $02
 ; ----------------------------------------------------------------------------
 ; 
-l32f9:		!byte $04, $06, $06, $06, $06, $03, $03, $03, $00, $00, $00, $00, $02
+screenposlo_lo:	!byte <pos0lo, <pos1lo, <pos2lo, <pos3lo, <pos4lo, <pos5lo, <pos6lo, <pos7lo, <pos8lo, <posAlo, <posDlo, <posElo, <pos_lo
 ; ----------------------------------------------------------------------------
 ; 
-l3306:		!byte $91, $9b, $a9, $b7, $c5, $d3, $db, $e3, $eb, $ed, $ef, $f1, $f3
+screenposlo_hi:	!byte >pos0lo, >pos1lo, >pos2lo, >pos3lo, >pos4lo, >pos5lo, >pos6lo, >pos7lo, >pos8lo, >posAlo, >posDlo, >posElo, >pos_lo
 ; ----------------------------------------------------------------------------
 ; 
-l3313:		!byte $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32
+screenposhi_lo:	!byte <pos0hi, <pos1hi, <pos2hi, <pos3hi, <pos4hi, <pos5hi, <pos6hi, <pos7hi, <pos8hi, <posAhi, <posDhi, <posEhi, <pos_hi
 ; ----------------------------------------------------------------------------
 ; 
-l3320:		!byte $96, $a2, $b0, $be, $cc, $d7, $df, $e7, $ec, $ee, $f0, $f2, $f6
+screenposhi_hi:	!byte >pos0hi, >pos1hi, >pos2hi, >pos3hi, >pos4hi, >pos5hi, >pos6hi, >pos7hi, >pos8hi, >posAhi, >posDhi, >posEhi, >pos_hi
 ; ----------------------------------------------------------------------------
-; 
-l332d:		!byte $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32, $32
-; ----------------------------------------------------------------------------
-; 
-l333a:		!byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $41, $44, $45, $20
-		!byte $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa
+; char
+char:		!byte '0', '1', '2', '3', '4', '5', '6', '7', '8', 'A', 'D', 'E', ' '
+;
+		!byte FILL, FILL, FILL, FILL, FILL, FILL, FILL, FILL, FILL
