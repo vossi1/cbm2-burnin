@@ -1845,7 +1845,7 @@ l2d2d:	sta screendata_pointer+1
 	pla
 	rts
 ; ----------------------------------------------------------------------------
-; screen text data - not relocatable!
+; screen text data
 *= $2d56
 high:		!scr "HIGH"
 
@@ -1880,7 +1880,6 @@ iclow3:		!scr $5d, " 58", $5d, $5d, " 26", $5d, $5d, "   ", $5d, $5d, " 61", $5d
 		!scr $5d, " 60", $5d, $5d, " 59", $5d, $5d, "  1", $5d, $5d, "  2", $5d
 		!scr $5d, "  3", $5d, $5d, "  4", $5d, $5d, "  7", $5d, $5d, " 10", $5d
 		!scr $5d, " 15", $5d, $5d, " 16", $5d, $5d, " 17", $5d, $5d, " 28", $5d
-; ----------------------------------------------------------------------------
 ; io register addresses
 sidregs:	!byte $00, $da, $01, $da, $02, $da, $03, $da	; sid register
 		!byte $04, $da, $05, $da, $06, $da, $07, $da
@@ -1903,7 +1902,7 @@ tpi1regs:	!byte $00, $de, $01, $de, $02, $de, $03, $de	; tpi1 register
 
 tpi2regs:	!byte $00, $df, $01, $df, $02, $df, $03, $df	; tpi2 register
 		!byte $04, $df, $05, $df, $06, $df, $07, $df
-
+; screen text data
 ramsegf:	!scr "RAM SEG $F"
 romssegf:	!scr "ROMS SEG $F"
 loadrtest:	!scr "LO ADR BYTE TEST "
@@ -1926,12 +1925,12 @@ line:		!scr "*-----------*"
 segment:	!scr "SEGMENT:"
 test:		!scr "TEST"
 execute:	!scr "EXECUTE"
-; ----------------------------------------------------------------------------
+; screen positions
 screen_pos_lo:	!byte $41, $69, $71, $99
 screen_pos_hi:	!byte $d1, $d1, $d3, $d3
+; screen text data
 bchksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
 noram:		!scr " *************  NO RAM  *************** "
-; ----------------------------------------------------------------------------
 ; screendata count -1
 scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11	; data $00-$07
 		!byte 11, 11, 11, 11, 11, 11, 16, 16	; data $08-$0f
@@ -2015,23 +2014,17 @@ posElo:		!byte $61
 posEhi:		!byte $d5
 pos_lo:		!byte $ad, $4c, $4d
 pos_hi:		!byte $d5, $d6, $d6
-; ----------------------------------------------------------------------------
 ; char count -1
 pos_count:	!byte $04, $06, $06, $06, $06, $03, $03, $03, $00, $00, $00, $00, $02
-; ----------------------------------------------------------------------------
-; 
+; pointer to screenposition lo - lo bytes
 screenposlo_lo:	!byte <pos0lo, <pos1lo, <pos2lo, <pos3lo, <pos4lo, <pos5lo, <pos6lo, <pos7lo, <pos8lo, <posAlo, <posDlo, <posElo, <pos_lo
-; ----------------------------------------------------------------------------
-; 
+; pointer to screenposition lo - hi bytes
 screenposlo_hi:	!byte >pos0lo, >pos1lo, >pos2lo, >pos3lo, >pos4lo, >pos5lo, >pos6lo, >pos7lo, >pos8lo, >posAlo, >posDlo, >posElo, >pos_lo
-; ----------------------------------------------------------------------------
-; 
+; pointer to screenposition hi - lo bytes
 screenposhi_lo:	!byte <pos0hi, <pos1hi, <pos2hi, <pos3hi, <pos4hi, <pos5hi, <pos6hi, <pos7hi, <pos8hi, <posAhi, <posDhi, <posEhi, <pos_hi
-; ----------------------------------------------------------------------------
-; 
+; pointer to screenposition hi - hi bytes
 screenposhi_hi:	!byte >pos0hi, >pos1hi, >pos2hi, >pos3hi, >pos4hi, >pos5hi, >pos6hi, >pos7hi, >pos8hi, >posAhi, >posDhi, >posEhi, >pos_hi
-; ----------------------------------------------------------------------------
-; char
+; screen char
 char:		!byte '0', '1', '2', '3', '4', '5', '6', '7', '8', 'A', 'D', 'E', ' '
-;
+; UNUSED
 		!byte FILL, FILL, FILL, FILL, FILL, FILL, FILL, FILL, FILL
