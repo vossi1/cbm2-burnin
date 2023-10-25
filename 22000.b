@@ -19,6 +19,7 @@ cr			= $06 *2	; TPI control register
 !addr pointer1		= $12		; 16bit pointer
 !addr screen_pointer	= $14		; 16bit pointer screen
 !addr actual_codebank	= $20		; actual code bank
+!addr cycles		= $21		; 4 bytes cycle counter
 !addr temp_and_value	= $2a		; temp screen data and value
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
@@ -79,13 +80,13 @@ drawscr:jsr clrscrn			; sub: clear screen
 	lda #$20
 	ldy #$d3
 	jsr drawics			; sub: draw chip graphics to screen
-l2045:	lda #$50
+	lda #$50
 	ldy #$d5
 	jsr drawics			; sub: draw chip graphics to screen
 	ldx #3
 	jsr chipadr			; sub: set pointer2 to chip graphics address
 	lda #$30
-l2053:	ldy #$d2
+	ldy #$d2
 	jsr drawics			; sub: draw chip graphics to screen
 	lda #$60
 	ldy #$d4
@@ -126,7 +127,7 @@ l2053:	ldy #$d2
 	jsr drawtxt			; sub: draw screen text
 	jsr itpi2pt			; sub: init tpi2 pointer
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank for IO
 	ldy #$00
 	lda (tpi2+cr),y
 	and #$fe			; tpi2 mc=0 disable interrupt controller
@@ -199,7 +200,7 @@ drwiclp:ldx temp1
 	lda (pointer4),y
 	sta pointer1+1
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank for Screen
 	lda temp1
 	ldy #$00
 	sta (pointer1),y		; draw char to screen
@@ -214,12 +215,12 @@ drwiclp:ldx temp1
 ;
 	lda banks
 	cmp #$04
-	beq l216b
-	ldx #$38
+	beq +				; skip for 256kB
+	ldx #$38			; NO RAM
 	jsr drawtxt			; sub: draw screen text
-	ldx #$37
+	ldx #$37			; NO RAM
 	jsr drawtxt			; sub: draw screen text
-l216b:	jmp l21cb
++	jmp main
 ; ----------------------------------------------------------------------------
 ; draw chip graphics to screen
 drawics:sta pointer1
@@ -241,7 +242,7 @@ drawlp1:lda actual_codebank
 	sty $3d
 	ldy $3e
 	ldx #SYSTEMBANK
-	stx IndirectBank		; set indirect bank to systembank
+	stx IndirectBank		; systembank for screen
 	sta (pointer1),y
 	dey
 	sty $3e
@@ -266,7 +267,7 @@ clrscrn:lda #>ScreenRAM
 	ldy #<ScreenRAM
 	sty pointer1
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank for screen
 	lda #' '			; space
 	ldx #$08			; 8 pages
 clrsclp:sta (pointer1),y
@@ -277,71 +278,76 @@ clrsclp:sta (pointer1),y
 	bne clrsclp
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l21cb:	jsr isidpt			; sub: init sid pointer
+; main test program loop
+main:	jsr isidpt			; sub: init sid pointer
 	jsr icrtpt			; sub: init crt pointer
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank
 	jsr l2275
 	jsr l229e
 	jsr l22f2
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
-	jsr l2259
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
+	jsr delay
 	jsr l2372
 	jsr l2592
 	jsr l2705
-	ldx #$03
-	sed
-	sec
-l2215:	lda $21,x
-	adc #$00
-	sta $21,x
-	bcc l2220
+; increase cycles
+	ldx #$03			; four bytes (00000000-99999999)
+	sed				; decimal mode
+	sec				; increase viy carry flag
+inclp:	lda cycles,x
+	adc #$00			; add carry
+	sta cycles,x
+	bcc prtcycl			; all bytes done
 	dex
-	bpl l2215
-l2220:	lda #$2d
+	bpl inclp			; next byte (00-99)
+; prepare print cycles
+prtcycl:lda #$2d			; screen position for cycles
 	sta pointer1
 	lda #$d0
 	sta pointer1+1
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank for screen
+; skip leading zeros
 	ldx #$ff
 	ldy #$00
-l2230:	inx
-	cpx #$04
-	bne l2238
+bytzero:inx
+	cpx #$04			; last byte
+	bne loadbyt			; branch if not last byte
 	dex
-	bne l2246
-l2238:	lda $21,x
-	beq l2230
-	and #$f0
-	beq l2246
-l2240:	jsr l2c2e
-	sta (pointer1),y
+	bne prdiglo			
+loadbyt:lda cycles,x			; load byte
+	beq bytzero			; skip zero bytes
+	and #$f0			; isloate high nible (decimal!)
+	beq prdiglo			; skip high nible printing if zero
+; print digits
+prdighi:jsr scrcodh			; calc screen code for high nibble
+	sta (pointer1),y		; print low nible digit to screen position
 	iny
-l2246:	lda $21,x
-	jsr l2c32
-	sta (pointer1),y
+prdiglo:lda cycles,x			; load digit
+	jsr scrcode			; calc screen code for low nibble
+	sta (pointer1),y		; print digit to screen position
 	iny
 	inx
-	lda $21,x
-	cpx #$04
-	bne l2240
-	cld
-	jmp l21cb
-l2259:	rts
+	lda cycles,x			; load next digit
+	cpx #$04			; check for last digit
+	bne prdighi			; next digit
+	cld				; disable decimal mode
+	jmp main			; start over
+; delay subroutine
+delay:	rts				; delay only
 ; ----------------------------------------------------------------------------
 ; 
 l225a:	lda IndirectBank
@@ -413,7 +419,7 @@ l22ca:	lda temp2
 	ldx #$2e
 	jsr drwor80
 l22d5:	lda temp2
-	jsr l2c28
+	jsr calcscr
 	sty temp2
 	ldy #$00
 	ldx #$2e
@@ -483,7 +489,7 @@ l2335:	clc
 	adc #$00
 	sta pointer3+1
 	lda temp_count
-	jsr l2c28
+	jsr calcscr
 	sty temp2
 	ldy #$00
 	sta (pointer3),y
@@ -1404,7 +1410,7 @@ l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
-	jsr l2c28
+	jsr calcscr
 	ldx IndirectBank
 	stx actual_indirbank
 	cpx #SYSTEMBANK
@@ -1424,12 +1430,12 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda actual_indirbank
-	jsr l2c28
+	jsr calcscr
 	tya
 	ldy #$03
 	sta (pointer3),y
 	lda pointer1+1
-	jsr l2c28
+	jsr calcscr
 	sty temp2
 	ldy #$05
 	sta (pointer3),y
@@ -1437,7 +1443,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda $29
-	jsr l2c28
+	jsr calcscr
 	sty temp2
 	ldy #$07
 	sta (pointer3),y
@@ -1445,7 +1451,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda CodeBank
-	jsr l2c28
+	jsr calcscr
 	tya
 	ldy #$0b
 	sta (pointer3),y
@@ -1653,23 +1659,25 @@ l2c1f:	sta $2b
 	sty $2c
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2c28:	pha
-	jsr l2c32
+; calc screen code and keep a
+calcscr:pha
+	jsr scrcode
 	tay
 	pla
-l2c2e:	lsr
+; calc screen code for high nibble
+scrcodh:lsr				; shift high nibble to low
 	lsr
 	lsr
 	lsr
-l2c32:	and #$0f
+; calc screen code
+scrcode:and #$0f			; isolate low nibble
 	cmp #$0a
-	bmi l2c3d
+	bmi scdcalc			; branch for 0-9
 	sec
 	sbc #$09
-	bne l2c3f
-l2c3d:	ora #$30
-l2c3f:	rts
+	bne scdend
+scdcalc:ora #$30			; calculate screen code
+scdend:	rts
 ; ----------------------------------------------------------------------------
 ; 
 calc2:	jsr mul5
