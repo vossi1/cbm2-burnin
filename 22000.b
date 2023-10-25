@@ -1845,7 +1845,7 @@ l2d2d:	sta screendata_pointer+1
 	pla
 	rts
 ; ----------------------------------------------------------------------------
-; screen text data
+; screen ic-numbers/text data
 *= $2d56
 high:		!scr "HIGH"
 
