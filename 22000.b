@@ -7,9 +7,17 @@
 SYSTEMBANK		= $0f		; #SYSTEMBANK
 FILL			= $aa
 ; TPI register
-pc			= $02 *2	; TPI port c
-mir			= $05 *2	; TPI interrupt mask register
-cr			= $06 *2	; TPI control register
+PC			= $02 *2	; TPI port c
+MIR			= $05 *2	; TPI interrupt mask register
+CR			= $06 *2	; TPI control register
+; SID register
+OSC1			= $00 *2
+OSC3			= $0e *2
+FREQHI			= $01 *2
+OSCCTL			= $04 *2
+ATKDCY			= $05 *2
+SUSREL			= $06 *2
+VOLUME			= $18 *2
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
@@ -35,7 +43,7 @@ cr			= $06 *2	; TPI control register
 !addr crtadr		= $9f		; pointer crt address register 
 !addr crtdata		= $a1		; pointer crt data register 
 ; io-pointer multi-usage!
-!addr tpi1		= $5f		; 16 pointer to TPI1 regs
+!addr tpi1		= $5f		; 8 pointer to TPI1 regs
 !addr sid		= $5f		; 29 pointer to SID regs
 !addr tpi2		= $6f		; 8 pointer to TPI2 regs
 !addr cia		= $7f		; 16 pointer to CIA regs
@@ -129,12 +137,12 @@ drawscr:jsr clrscrn			; sub: clear screen
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank for IO
 	ldy #$00
-	lda (tpi2+cr),y
+	lda (tpi2+CR),y
 	and #$fe			; tpi2 mc=0 disable interrupt controller
-	sta (tpi2+cr),y
+	sta (tpi2+CR),y
 	lda #$00
-	sta (tpi2+mir),y		; tpi2 mir=0 mask all interrrupts
-	lda (tpi2+pc),y			; read tpi2 port c
+	sta (tpi2+MIR),y		; tpi2 mir=0 mask all interrrupts
+	lda (tpi2+PC),y			; read tpi2 port c
 	and #$80			; isolate bit#7 low/high profile
 	bne hiprof			; branch if high profile
 ; low profile
@@ -283,7 +291,7 @@ main:	jsr isidpt			; sub: init sid pointer
 	jsr icrtpt			; sub: init crt pointer
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
-	jsr l2275
+	jsr playsnd			; sub: play ping sound
 	jsr l229e
 	jsr l22f2
 	jsr delay
@@ -365,27 +373,27 @@ l225a:	lda IndirectBank
 	sta IndirectBank
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2275:	ldy #$00
+; play ping sound
+playsnd:ldy #$00
 	lda IndirectBank
-	sta actual_indirbank
-	lda #SYSTEMBANK
-	sta IndirectBank
-	sta ($8f),y
+	sta actual_indirbank		; remember bank
+	lda #SYSTEMBANK			; 15 also for volume	
+	sta IndirectBank		; systembank for SID
+	sta (sid+VOLUME),y		; volume 15
 	lda #$00
-	sta ($69),y
+	sta (sid+OSC1+ATKDCY),y
 	lda #$fa
-	sta ($6b),y
+	sta (sid+OSC1+SUSREL),y
 	lda #$40
-	sta ($61),y
+	sta (sid+OSC1+FREQHI),y
 	lda #$80
-	sta ($7d),y
-	lda #$15
-	sta ($67),y
-	lda #$14
-	sta ($67),y
+	sta (sid+OSC3+FREQHI),y
+	lda #$15			; OSC1 on
+	sta (sid+OSC1+OSCCTL),y
+	lda #$14			; OSC1 off
+	sta (sid+OSC1+OSCCTL),y
 	lda actual_indirbank
-	sta IndirectBank
+	sta IndirectBank		; restore bank
 	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -814,7 +822,7 @@ l25b8:	lda $45
 	bne l261e
 	lda $44
 	beq l25b8
-	jsr l2275
+	jsr playsnd
 	lda #$09
 	sta $49
 l25ce:	lda $44
@@ -824,7 +832,7 @@ l25ce:	lda $44
 	bne l261e
 	lda $43
 	beq l25ce
-	jsr l2275
+	jsr playsnd
 	lda #$59
 	sta $48
 l25e4:	lda $43
@@ -835,7 +843,7 @@ l25e4:	lda $43
 	lda $42
 	cmp #$01
 	beq l25e4
-	jsr l2275
+	jsr playsnd
 	lda #$59
 	sta $47
 l25fc:	lda $42
@@ -1102,7 +1110,7 @@ l27ea:	sty $41
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq l2805
-	jsr l2275
+	jsr playsnd
 	ldx #$0e
 	jsr drawtxt			; sub: draw screen text
 l2805:	ldy $41
@@ -1234,7 +1242,7 @@ l2903:	iny
 	lda pointer1+1
 	cmp $25
 	bne l28d8
-	jsr l2275
+	jsr playsnd
 	ldx #$13
 	jsr l2b95
 	ldx #$5a
