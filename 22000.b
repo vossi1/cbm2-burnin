@@ -26,6 +26,8 @@ VOLUME			= $18 *2
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
 !addr screen_pointer	= $14		; 16bit pointer screen
+!addr temp_pchksum1	= $1d		; temp test program checksum
+!addr temp_pchksum2	= $1e		; temp test program checksum
 !addr actual_codebank	= $20		; actual code bank
 !addr cycles		= $21		; 4 bytes cycle counter
 !addr temp_and_value	= $2a		; temp screen data and value
@@ -292,7 +294,7 @@ main:	jsr isidpt			; sub: init sid pointer
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
 	jsr playsnd			; sub: play ping sound
-	jsr l229e
+	jsr pchksum			; calc program checksum (F5)
 	jsr l22f2
 	jsr delay
 	jsr delay
@@ -396,8 +398,8 @@ playsnd:ldy #$00
 	sta IndirectBank		; restore bank
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l229e:	ldy #$47
+; calc program checksum (F5)
+pchksum:ldy #$47			; start at end of code: 3347
 	lda #$00
 	sta pointer1
 	sta temp2
@@ -405,38 +407,40 @@ l229e:	ldy #$47
 	sta pointer1+1
 	sec
 	sbc #$20
-	tax
+	tax				; x=13 - programsize= 13 pages (+y bytes)
 	lda CodeBank
-	sta IndirectBank
-l22b2:	lda (pointer1),y
+	sta IndirectBank		; codebank
+cksumlp:lda (pointer1),y		; load code byte
 	eor temp2
-	sta temp2
+	sta temp2			; exor byte and save for next byte
 	dey
-	bne l22b2
+	bne cksumlp			; next byte
 	dec pointer1+1
 	dex
-	bpl l22b2
-	lda $1d
-	bne l22ca
-	dec $1d
-	lda temp2
-	sta $1e
-l22ca:	lda temp2
-	cmp $1e
-	beq l22d5
-	ldx #$2e
-	jsr drwor80
-l22d5:	lda temp2
+	bpl cksumlp			; next page
+; check if zeropage with checksum is ok
+	lda temp_pchksum1
+	bne +				; not zero from clear zp -> faulty
+	dec temp_pchksum1
+	lda temp2			; checksum
+	sta temp_pchksum2
++	lda temp2
+	cmp temp_pchksum2
+	beq prntsum			; zeropage ok -> print checksum
+	ldx #$2e		
+	jsr drawrev			; draw bad program checksum reverse
+; print checksum
+prntsum:lda temp2			; checksum
 	jsr calcscr
 	sty temp2
 	ldy #$00
 	ldx #$2e
 	stx pointer1
 	ldx #$d7
-	stx pointer1+1
+	stx pointer1+1			; set screen position
 	ldx #SYSTEMBANK
-	stx IndirectBank
-	sta (pointer1),y
+	stx IndirectBank		; systembank for screen
+	sta (pointer1),y		; print checksum
 	iny
 	lda temp2
 	sta (pointer1),y
@@ -1801,13 +1805,13 @@ cpydata:sta pointer3
 	bpl -
 	rts
 ; ----------------------------------------------------------------------------
-; draw with OR $80
-drwor80:pha
+; draw reverse
+drawrev:pha
 	tya
 	pha
 	txa
 	pha
-	lda #$80
+	lda #$80			; reverse
 	sta temp_or_value
 	bne drawtx2			; jump always
 ; draw pure withour AND
@@ -1945,7 +1949,7 @@ execute:	!scr "EXECUTE"
 screen_pos_lo:	!byte $41, $69, $71, $99
 screen_pos_hi:	!byte $d1, $d1, $d3, $d3
 ; screen text data
-bchksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
+bpchksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
 noram:		!scr " *************  NO RAM  *************** "
 ; screendata count -1
 scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11	; data $00-$07
@@ -1962,7 +1966,7 @@ scrdata_lo:	!byte <title, <ramsegf, <romssegf, <iclow1, <iclow2, <iclow3, <line,
 		!byte <chkrbrd, <aa55, <marchinc, <decadra5, <dec5a, <incadr, <decadr00, <segment
 		!byte <segment, <segment, <segment, <segment, <segment, <segment, <segment, <segment
 		!byte <segment, <segment, <segment, <execute, <execute, <execute, <execute, <test
-		!byte <test, <test, <test, <ics, <staticram, <tmr, <bchksum, <high
+		!byte <test, <test, <test, <ics, <staticram, <tmr, <bpchksum, <high
 		!byte <ichigh1, <ichigh2, <ichigh3, <tod, <tnt, <todtests, <timertsts, <noram
 		!byte <noram
 ; screendata addresses hi
@@ -1971,7 +1975,7 @@ scrdata_hi:	!byte >title, >ramsegf, >romssegf, >iclow1, >iclow2, >iclow3, >line,
 		!byte >chkrbrd, >aa55, >marchinc, >decadra5, >dec5a, >incadr, >decadr00, >segment
 		!byte >segment, >segment, >segment, >segment, >segment, >segment, >segment, >segment
 		!byte >segment, >segment, >segment, >execute, >execute, >execute, >execute, >test
-		!byte >test, >test, >test, >ics, >staticram, >tmr, >bchksum, >high
+		!byte >test, >test, >test, >ics, >staticram, >tmr, >bpchksum, >high
 		!byte >ichigh1, >ichigh2, >ichigh3, >tod, >tnt, >todtests, >timertsts, >noram
 		!byte >noram
 ; screen RAM addresses lo
