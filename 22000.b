@@ -2,13 +2,14 @@
 ; disassembled by vossi 10/2023
 ;
 ; NOTE: ROM Checksum routine is faulty:
-;	with 4 256kB it prints always E0, A0, 80
-;	else: E0, random values depending on other ZP values
+;	with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 
 ;
 !cpu 6502
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
 ; ***************************************** CONSTANTS *********************************************
+CODESTART		= $2000		; code start
+CODEEND			= $3347		; code end for program checksum
 SYSTEMBANK		= $0f		; #SYSTEMBANK
 FILL			= $aa
 ; TPI register
@@ -57,7 +58,7 @@ VOLUME			= $18 *2
 !addr cia		= $7f		; 16 pointer to CIA regs
 !addr acia		= $a3		; 4 pointer to ACIA regs
 ; ******************************************* CODE ************************************************
-*= $2000
+*= CODESTART
 	sei
 	cld
 	ldx #$ff
@@ -405,15 +406,15 @@ playsnd:ldy #$00
 	rts
 ; ----------------------------------------------------------------------------
 ; calc program checksum (F5)
-pchksum:ldy #$47			; start at end of code: 3347
+pchksum:ldy #<CODEEND			; programend low
 	lda #$00
 	sta pointer1
 	sta temp2
-	lda #$33
+	lda #>CODEEND			; programend hi
 	sta pointer1+1
 	sec
-	sbc #$20
-	tax				; x=13 - programsize= 13 pages (+y bytes)
+	sbc #>CODESTART			; program start
+	tax				; x= programsize pages (+y bytes)
 	lda CodeBank
 	sta IndirectBank		; codebank
 cksumlp:lda (pointer1),y		; load code byte
@@ -453,6 +454,7 @@ prntsum:lda temp2			; checksum
 	rts
 ; ----------------------------------------------------------------------------
 ; calc and print rom checksums ***** FAULTY *****
+; with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 
 romsums:clv				; NO SENSE - first adc changes overflow flag
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
@@ -464,18 +466,18 @@ romsums:clv				; NO SENSE - first adc changes overflow flag
 	ldx #$20
 	lda banks
 	cmp #$04
-	beq banks4			; 4 ram banks
+	beq banks4			; branch 4 ram banks
 	lda $a0				; ***** NO SENSE - area of IO pointer !!!
-	bvc bashi
+	bvc bashi			; ***** NO SENSE - branch dependent of last adc/sbc ? 
 banks4:	lda #$a0			; basic hi address a000
 bashi:	jsr prntrom			; calculate and print checksum of one rom
 	ldy #$0a
 	ldx #$20
 	lda banks
 	cmp #$04
-	beq baslo			; 4 ram banks
+	beq baslo			; branch 4 ram banks
 	lda $80				; ***** NO SENSE - area of IO pointer !!!
-	bvc prntrom			; calculate and print checksum of one rom
+	bvc prntrom			; ***** NO SENSE - branch dependent of last adc/sbc ? 
 baslo:	lda #$80			; basic low address 8000
 ; calculate and print checksum of rom
 prntrom:sty screen_pos
