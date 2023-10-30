@@ -1,5 +1,10 @@
 ; CBMII b128-256 burnin 
 ; disassembled by vossi 10/2023
+;
+; NOTE: ROM Checksum routine is faulty:
+;	with 4 256kB it prints always E0, A0, 80
+;	else: E0, random values depending on other ZP values
+;
 !cpu 6502
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
@@ -33,8 +38,9 @@ VOLUME			= $18 *2
 !addr temp_and_value	= $2a		; temp screen data and value
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
+!addr screen_pos	= $39		; add value screen position rom checksum
 !addr temp2		= $4a		; temp
-!addr temp_count	= $4c		; temp/counter
+!addr temp_count_sum	= $4c		; temp/counter
 !addr temp1		= $4d		; temp
 !addr screendata_pointer= $37		; 16bit pointer screen data
 !addr temp_dec_value	= $55		; temp dec value
@@ -149,7 +155,7 @@ drawscr:jsr clrscrn			; sub: clear screen
 	bne hiprof			; branch if high profile
 ; low profile
 	ldx #$0b
-	stx temp_count
+	stx temp_count_sum
 	ldx #$03			; lines *---- ----* and low-ics
 	stx temp1
 	bne drwiclp			; jump always
@@ -157,39 +163,39 @@ drawscr:jsr clrscrn			; sub: clear screen
 hiprof:	ldx #$2f
 	jsr drawtxt			; sub: draw screen text "HIGH"
 	ldx #$08
-	stx temp_count
+	stx temp_count_sum
 	ldx #$06			; lines *---- ----* 
 	stx temp1
 -	ldx temp1
 	jsr drawpur			; sub: draw without and
 	inc temp1
-	dec temp_count
+	dec temp_count_sum
 	bne -
 	ldx #$03
-	stx temp_count
+	stx temp_count_sum
 	ldx #$30			; high-ics
 	stx temp1
 ; draw lines+ics low / ics only high
 drwiclp:ldx temp1
 	jsr drawpur
 	inc temp1
-	dec temp_count
+	dec temp_count_sum
 	bne drwiclp
 ; draw segment, execute, test
 	ldx #$14
-	stx temp_count
+	stx temp_count_sum
 	ldx #$17			; segment, execute, test
 	stx temp1
 -	ldx temp1
 	jsr drawtxt			; sub: draw screen text
 	inc temp1
-	dec temp_count
+	dec temp_count_sum
 	bne -
 ; draw multiple chars to screen positions from table
 	ldx #$0c			; char to draw
 	stx temp2
 --	lda pos_count,x			; positions to draw
-	sta temp_count
+	sta temp_count_sum
 	lda char,x
 	and #$3f
 	sta temp1
@@ -204,7 +210,7 @@ drwiclp:ldx temp1
 	sta pointer4+1
 	lda CodeBank
 	sta IndirectBank
-	ldy temp_count
+	ldy temp_count_sum
 	lda (pointer3),y		; load screen postion
 	sta pointer1
 	lda (pointer4),y
@@ -214,9 +220,9 @@ drwiclp:ldx temp1
 	lda temp1
 	ldy #$00
 	sta (pointer1),y		; draw char to screen
-	ldx temp_count
+	ldx temp_count_sum
 	dex
-	stx temp_count
+	stx temp_count_sum
 	bpl -				; next postion
 	ldx temp2
 	dex
@@ -295,7 +301,7 @@ main:	jsr isidpt			; sub: init sid pointer
 	sta IndirectBank		; systembank
 	jsr playsnd			; sub: play ping sound
 	jsr pchksum			; calc program checksum (F5)
-	jsr l22f2
+	jsr romsums			; calc and print rom checksums
 	jsr delay
 	jsr delay
 	jsr delay
@@ -431,7 +437,7 @@ cksumlp:lda (pointer1),y		; load code byte
 	jsr drawrev			; draw bad program checksum reverse
 ; print checksum
 prntsum:lda temp2			; checksum
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	ldx #$2e
@@ -446,72 +452,74 @@ prntsum:lda temp2			; checksum
 	sta (pointer1),y
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l22f2:	clv
+; calc and print rom checksums ***** FAULTY *****
+romsums:clv				; NO SENSE - first adc changes overflow flag
 	lda #SYSTEMBANK
-	sta IndirectBank
-	ldy #$00
-	ldx #$20
-	lda #$e0
-	jsr l2323
-	ldy #$05
+	sta IndirectBank		; systembank
+	ldy #$00			; first screen position
+	ldx #$20			; rom size 2000
+	lda #$e0			; kernal address e000
+	jsr prntrom			; calculate and print checksum of one rom
+	ldy #$05			; screen pos basic hi
 	ldx #$20
 	lda banks
 	cmp #$04
-	beq l230e
-	lda $a0
-	bvc l2310
-l230e:	lda #$a0
-l2310:	jsr l2323
+	beq banks4			; 4 ram banks
+	lda $a0				; ***** NO SENSE - area of IO pointer !!!
+	bvc bashi
+banks4:	lda #$a0			; basic hi address a000
+bashi:	jsr prntrom			; calculate and print checksum of one rom
 	ldy #$0a
 	ldx #$20
 	lda banks
 	cmp #$04
-	beq l2321
-	lda $80
-	bvc l2323
-l2321:	lda #$80
-l2323:	sty $39
-	sta pointer1+1
+	beq baslo			; 4 ram banks
+	lda $80				; ***** NO SENSE - area of IO pointer !!!
+	bvc prntrom			; calculate and print checksum of one rom
+baslo:	lda #$80			; basic low address 8000
+; calculate and print checksum of rom
+prntrom:sty screen_pos
+	sta pointer1+1			; set pointer hi to rom start
 	dex
 	txa
 	clc
-	adc pointer1+1
+	adc pointer1+1			; calc rom end 
 	sta pointer1+1
 	lda #$00
-	sta temp_count
+	sta temp_count_sum		; init sum
 	sta pointer1
 	tay
-l2335:	clc
-	lda (pointer1),y
-	adc temp_count
-	adc #$00
-	adc #$00
-	sta temp_count
+rsumlp:	clc
+	lda (pointer1),y		; load byte
+	adc temp_count_sum		; add previous value
+	adc #$00			; add carry
+	adc #$00			; ***** why ?
+	sta temp_count_sum		; store new sum
 	dey
-	bne l2335
+	bne rsumlp			; next byte
 	dec pointer1+1
 	dex
-	bpl l2335
-	lda $39
+	bpl rsumlp			; next page
+; print sum
+	lda screen_pos			; screen pos add value
 	clc
-	adc #$a1
+	adc #$a1			; calc screen position lo
 	sta pointer3
 	lda #$d6
-	adc #$00
+	adc #$00			; add carry of screen pos lo
 	sta pointer3+1
-	lda temp_count
-	jsr calcscr
+	lda temp_count_sum
+	jsr scrcodb			; calc screen code for a byte
 	sty temp2
 	ldy #$00
-	sta (pointer3),y
+	sta (pointer3),y		; print to screen
 	iny
 	lda temp2
 	sta (pointer3),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-	lda temp_count
+	lda temp_count_sum
 	inc pointer1+1
 	cmp pointer1+1
 	beq l2371
@@ -755,7 +763,7 @@ l2538:	lda #$88
 	bne l2549
 l2549:	jsr l258c
 	txa
-	sta $39
+	sta screen_pos
 	sta ($99),y
 	ldx #$00
 	stx $3b
@@ -771,8 +779,8 @@ l2555:	lda ($99),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-l2567:	and $39
-	cmp $39
+l2567:	and screen_pos
+	cmp screen_pos
 	beq l256f
 	dec $16
 l256f:	cpx #$db
@@ -1121,10 +1129,10 @@ l2805:	ldy $41
 	lda $40
 	sta pointer1+1
 l280b:	tya
-	sta temp_count
+	sta temp_count_sum
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2819
 	jsr l2a59
 l2819:	iny
@@ -1136,9 +1144,9 @@ l2819:	iny
 	ldx #$0f
 	jsr l2b7e
 l2829:	tya
-	sta temp_count
+	sta temp_count_sum
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2835
 	jsr l2a59
 l2835:	lda pointer1+1
@@ -1156,7 +1164,7 @@ l2842:	iny
 	ldx #$10
 	jsr l2b7e
 	lda #$55
-	sta temp_count
+	sta temp_count_sum
 	lda #$aa
 	sta temp1
 l285a:	lda (pointer1),y
@@ -1166,7 +1174,7 @@ l285a:	lda (pointer1),y
 l2863:	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2870
 	jsr l2a59
 l2870:	iny
@@ -1189,7 +1197,7 @@ l2887:	iny
 	ldx #$11
 	jsr l2b7e
 l2897:	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l28a0
 	jsr l2a59
 l28a0:	lda #$aa
@@ -1206,7 +1214,7 @@ l28ad:	iny
 l28b7:	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l28c4
 	jsr l2a59
 l28c4:	iny
@@ -1231,7 +1239,7 @@ l28e1:	txa
 	jsr l2a59
 l28ed:	iny
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l28f7
 	jsr l2a59
 l28f7:	txa
@@ -1250,11 +1258,11 @@ l2903:	iny
 	ldx #$13
 	jsr l2b95
 	ldx #$5a
-	stx temp_count
+	stx temp_count_sum
 	ldx #$a5
 	stx temp1
 l291e:	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2927
 	jsr l2a59
 l2927:	txa
@@ -1271,7 +1279,7 @@ l2933:	dey
 	cmp $40
 	bne l291e
 l2940:	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2949
 	jsr l2a59
 l2949:	txa
@@ -1293,7 +1301,7 @@ l2961:	lda (pointer1),y
 l296a:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2976
 	jsr l2a59
 l2976:	dey
@@ -1310,7 +1318,7 @@ l2983:	lda (pointer1),y
 l298c:	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2998
 	jsr l2a59
 l2998:	dey
@@ -1321,7 +1329,7 @@ l2998:	dey
 	ldx #$ff
 	stx $4e
 l29a6:	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l29af
 	jsr l2a59
 l29af:	txa
@@ -1339,7 +1347,7 @@ l29bb:	iny
 	ldx #$16
 	jsr l2b95
 	ldx #$00
-	stx temp_count
+	stx temp_count_sum
 	ldx #$ff
 	stx temp1
 l29d3:	txa
@@ -1349,7 +1357,7 @@ l29d3:	txa
 	jsr l2a59
 l29dd:	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l29e8
 	jsr l2a59
 l29e8:	dey
@@ -1366,7 +1374,7 @@ l29f5:	txa
 	jsr l2a59
 l29ff:	sta (pointer1),y
 	lda (pointer1),y
-	eor temp_count
+	eor temp_count_sum
 	beq l2a0a
 	jsr l2a59
 l2a0a:	dey
@@ -1422,7 +1430,7 @@ l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	ldx IndirectBank
 	stx actual_indirbank
 	cpx #SYSTEMBANK
@@ -1442,12 +1450,12 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda actual_indirbank
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	tya
 	ldy #$03
 	sta (pointer3),y
 	lda pointer1+1
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	sty temp2
 	ldy #$05
 	sta (pointer3),y
@@ -1455,7 +1463,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda $29
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	sty temp2
 	ldy #$07
 	sta (pointer3),y
@@ -1463,7 +1471,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda CodeBank
-	jsr calcscr
+	jsr scrcodb			; calc screen code for a byte
 	tya
 	ldy #$0b
 	sta (pointer3),y
@@ -1632,7 +1640,7 @@ l2bbf:	ldx $31
 	ora $2c
 	bne l2be8
 	ldy #$12
-l2be8:	lda temp_count
+l2be8:	lda temp_count_sum
 	sta $33
 	lda temp1
 	sta $2d
@@ -1660,7 +1668,7 @@ l2bf0:	ldx $31
 ; 
 l2c16:	sta $31
 	stx $33
-	stx temp_count
+	stx temp_count_sum
 	sty $32
 	rts
 ; ----------------------------------------------------------------------------
@@ -1671,24 +1679,24 @@ l2c1f:	sta $2b
 	sty $2c
 	rts
 ; ----------------------------------------------------------------------------
-; calc screen code and keep a
-calcscr:pha
-	jsr scrcode
-	tay
+; calc screen codes for a byte and return in a and y
+scrcodb:pha				; save value in a
+	jsr scrcode			; calc low nibble hex
+	tay				; store low in y
 	pla
 ; calc screen code for high nibble
 scrcodh:lsr				; shift high nibble to low
 	lsr
 	lsr
 	lsr
-; calc screen code
+; calc screen code dec / hex
 scrcode:and #$0f			; isolate low nibble
 	cmp #$0a
 	bmi scdcalc			; branch for 0-9
 	sec
-	sbc #$09
-	bne scdend
-scdcalc:ora #$30			; calculate screen code
+	sbc #$09			; calc a-f -> 01-06
+	bne scdend			; jump always
+scdcalc:ora #$30			; calculate screen code 0-9 -> 30-39
 scdend:	rts
 ; ----------------------------------------------------------------------------
 ; 
