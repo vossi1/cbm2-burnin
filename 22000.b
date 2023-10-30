@@ -7,6 +7,7 @@
 !cpu 6502
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
+; FIX_ROMCHECKSUMS = 1
 ; ***************************************** CONSTANTS *********************************************
 CODESTART		= $2000		; code start
 CODEEND			= $3347		; code end for program checksum
@@ -467,7 +468,12 @@ romsums:clv				; NO SENSE - first adc changes overflow flag
 	lda banks
 	cmp #$04
 	beq banks4			; branch 4 ram banks
+; ******************** FIX Romchecksum for non-256kB machines ********************
+!ifdef FIX_ROMCHECKSUMS{
+	lda #$a0			; basic hi address a000
+} else{
 	lda $a0				; ***** NO SENSE - area of IO pointer !!!
+}
 	bvc bashi			; ***** NO SENSE - branch dependent of last adc/sbc ? 
 banks4:	lda #$a0			; basic hi address a000
 bashi:	jsr prntrom			; calculate and print checksum of one rom
@@ -476,7 +482,12 @@ bashi:	jsr prntrom			; calculate and print checksum of one rom
 	lda banks
 	cmp #$04
 	beq baslo			; branch 4 ram banks
+; ******************** FIX Romchecksum for non-256kB machines ********************
+!ifdef FIX_ROMCHECKSUMS{
+	lda #$80			; basic hi address 8000
+} else{
 	lda $80				; ***** NO SENSE - area of IO pointer !!!
+}
 	bvc prntrom			; ***** NO SENSE - branch dependent of last adc/sbc ? 
 baslo:	lda #$80			; basic low address 8000
 ; calculate and print checksum of rom
