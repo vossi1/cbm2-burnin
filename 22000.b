@@ -7,7 +7,7 @@
 !cpu 6502
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
-; FIX_ROMCHECKSUMS = 1
+; FIX_ROMCHECKSUMS = 1		; fixes ROM Checksums for non 256kB machines
 ; ***************************************** CONSTANTS *********************************************
 CODESTART		= $2000		; code start
 CODEEND			= $3347		; code end for program checksum
@@ -318,9 +318,9 @@ main:	jsr isidpt			; sub: init sid pointer
 	jsr delay
 	jsr delay
 	jsr delay
-	jsr l2372
-	jsr l2592
-	jsr l2705
+	jsr timtest			; timer tests
+	jsr todtest			; TOD test
+	jsr ramtest			; RAM tests
 ; increase cycles
 	ldx #$03			; four bytes (00000000-99999999)
 	sed				; decimal mode
@@ -531,16 +531,16 @@ rsumlp:	clc
 	sta (pointer3),y
 	rts
 ; ----------------------------------------------------------------------------
-; 
+; unused
 	lda temp_count_sum
 	inc pointer1+1
 	cmp pointer1+1
-	beq l2371
+	beq +
 	jsr l2b3e
-l2371:	rts
++	rts
 ; ----------------------------------------------------------------------------
-; 
-l2372:	sei
+; timer tests
+timtest:sei
 	ldx #$36
 	jsr drawtxt			; sub: draw screen text
 	jsr l2cb9
@@ -819,10 +819,10 @@ l2586:	ldy #$00
 l258c:	ldy #$00
 	lda ($99),y
 	rts
+	rti				; unused
 ; ----------------------------------------------------------------------------
-; 
-	rti
-l2592:	sei
+; TOD test
+todtest:sei
 	ldx #$35
 	jsr drawtxt			; sub: draw screen text
 	jsr iciapt			; sub: init cia pointer
@@ -1010,7 +1010,7 @@ l2703:	cld
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-l2705:	ldy banks
+ramtest:ldy banks
 	dey
 	sty $57
 	ldx CodeBank
