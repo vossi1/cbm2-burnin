@@ -11,20 +11,26 @@
 ; ***************************************** CONSTANTS *********************************************
 CODESTART		= $2000		; code start
 CODEEND			= $3347		; code end for program checksum
-SYSTEMBANK		= $0f		; #SYSTEMBANK
+SYSTEMBANK		= $f		; #SYSTEMBANK
 FILL			= $aa
 ; TPI register
-PC			= $02 *2	; TPI port c
-MIR			= $05 *2	; TPI interrupt mask register
-CR			= $06 *2	; TPI control register
+PC			= $2 *2		; port c
+MIR			= $5 *2		; interrupt mask register
+CR			= $6 *2		; control register
+; CIA register
+tod10			= $8 *2		; tod 10th of seconds
+todsec			= $9 *2		; tod seconds
+todmin			= $a *2		; tod monutes
+todhr			= $b *2		; tod hours
+icr			= $d *2		; interrupt control register
 ; SID register
-OSC1			= $00 *2
-OSC3			= $0e *2
-FREQHI			= $01 *2
-OSCCTL			= $04 *2
-ATKDCY			= $05 *2
-SUSREL			= $06 *2
-VOLUME			= $18 *2
+OSC1			= $00 *2	; oscillator 1
+OSC3			= $0e *2	; oscillator 2
+FREQHI			= $01 *2	; frequency hi
+OSCCTL			= $04 *2	; oscillator control
+ATKDCY			= $05 *2	; attack/decay
+SUSREL			= $06 *2	; sustain/release
+VOLUME			= $18 *2	; volume
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
@@ -547,7 +553,7 @@ timtest:sei
 	jsr iciapt			; sub: init cia pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
-	jsr l2586
+	jsr eciairq
 	ldy #$00
 	lda #$00
 	sta ($9d),y
@@ -774,13 +780,13 @@ l2538:	lda #$88
 	sta ($9d),y
 	jsr l257e
 	bne l2549
-l2549:	jsr l258c
+l2549:	jsr cciairq
 	txa
 	sta screen_pos
-	sta ($99),y
+	sta (cia+icr),y
 	ldx #$00
 	stx $3b
-l2555:	lda ($99),y
+l2555:	lda (cia+icr),y
 	bne l2567
 	inx
 	bne l2555
@@ -812,12 +818,13 @@ l2581:	sbc #$01
 	bpl l2581
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2586:	ldy #$00
-	lda #$7f
-	sta ($99),y
-l258c:	ldy #$00
-	lda ($99),y
+; enable all CIA interrupts
+eciairq:ldy #$00
+	lda #$7f			; clear all irq mask bits
+	sta (cia+icr),y
+; clear CIA inerrupt reg
+cciairq:ldy #$00
+	lda (cia+icr),y			; clear irq reg
 	rts
 	rti				; unused
 ; ----------------------------------------------------------------------------
@@ -826,7 +833,7 @@ todtest:sei
 	ldx #$35
 	jsr drawtxt			; sub: draw screen text
 	jsr iciapt			; sub: init cia pointer
-	jsr l2586
+	jsr eciairq
 	ldy #$00
 	sty $16
 	lda #SYSTEMBANK
@@ -888,24 +895,24 @@ l2613:	cmp #$12
 	jsr l2670
 	lda $16
 l261e:	bne l2653
-	lda ($99),y
+	lda (cia+icr),y
 	lda #$7f
-	sta ($99),y
+	sta (cia+icr),y
 	lda #$80
 	sta ($9d),y
 	lda $42
-	sta ($95),y
+	sta (cia+todhr),y
 	lda $43
-	sta ($93),y
+	sta (cia+todmin),y
 	lda $44
-	sta ($91),y
+	sta (cia+todsec),y
 	lda $45
 	clc
 	adc #$01
-	sta ($8f),y
+	sta (cia+tod10),y
 	sty pointer1
 	sty pointer1+1
-l2641:	lda ($99),y
+l2641:	lda (cia+icr),y
 	bne l264f
 	dec pointer1
 	bne l2641
@@ -936,15 +943,15 @@ l2670:	sed
 	sty $4b
 	lda $46
 	sta $42
-	sta ($95),y
+	sta (cia+todhr),y
 	lda $47
 	sta $43
-	sta ($93),y
+	sta (cia+todmin),y
 	lda $48
 	sta $44
-	sta ($91),y
+	sta (cia+todsec),y
 	lda $49
-	sta ($8f),y
+	sta (cia+tod10),y
 	clc
 	adc #$01
 	sta $45
@@ -983,7 +990,7 @@ l26c7:	cmp #$12
 l26cf:	lda #$80
 	eor $42
 	sta $42
-l26d5:	lda ($8f),y
+l26d5:	lda (cia+tod10),y
 	cmp $49
 	bne l26e9
 	dec pointer1
@@ -995,13 +1002,13 @@ l26d5:	lda ($8f),y
 	beq l26ff
 l26e9:	cmp $45
 	bne l26ff
-	lda ($91),y
+	lda (cia+todsec),y
 	cmp $44
 	bne l26ff
-	lda ($93),y
+	lda (cia+todmin),y
 	cmp $43
 	bne l26ff
-	lda ($95),y
+	lda (cia+todhr),y
 	cmp $42
 	beq l2703
 l26ff:	lda #$ff
