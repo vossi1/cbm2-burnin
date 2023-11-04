@@ -38,7 +38,11 @@ VOLUME			= $18 *2	; volume
 !addr CRT		= $d800		; CRT
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
+!addr tod_count1	= $12		; tod test counter
+!addr tod_count2	= $13		; tod test counter
 !addr screen_pointer	= $14		; 16bit pointer screen
+!addr tod_state		= $16		; tod state - $ff = bad
+;			= $16
 !addr temp_pchksum1	= $1d		; temp test program checksum
 !addr temp_pchksum2	= $1e		; temp test program checksum
 !addr actual_codebank	= $20		; actual code bank
@@ -47,7 +51,16 @@ VOLUME			= $18 *2	; volume
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
 !addr screen_pos	= $39		; add value screen position rom checksum
+!addr time1_hours	= $46		; time 1 hours
+!addr time1_minutes	= $47		; time 1 minutes
+!addr time1_seconds	= $48		; time 1 seconds
+!addr time1_10th	= $49		; time 1 10th seconds
+!addr time2_hours	= $42		; time 1 hours
+!addr time2_minutes	= $43		; time 1 minutes
+!addr time2_seconds	= $44		; time 1 seconds
+!addr time2_10th	= $45		; time 1 10th seconds
 !addr temp2		= $4a		; temp
+!addr tod_count3	= $4b		; tod test counter
 !addr temp_count_sum	= $4c		; temp/counter
 !addr temp1		= $4d		; temp
 !addr screendata_pointer= $37		; 16bit pointer screen data
@@ -542,7 +555,7 @@ rsumlp:	clc
 	inc pointer1+1
 	cmp pointer1+1
 	beq +
-	jsr l2b3e
+	jsr drawbad
 +	rts
 ; ----------------------------------------------------------------------------
 ; timer tests
@@ -755,7 +768,7 @@ l2508:	lda $16
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr l2b3e
+	jsr drawbad
 	lda $1b
 	ldx #$2d
 	bne l2523
@@ -828,192 +841,203 @@ cciairq:ldy #$00
 	rts
 	rti				; unused
 ; ----------------------------------------------------------------------------
-; TOD test
+; TOD tests
 todtest:sei
-	ldx #$35
+	ldx #$35			; "6526 TOD TESTS"
 	jsr drawtxt			; sub: draw screen text
 	jsr iciapt			; sub: init cia pointer
-	jsr eciairq
+	jsr eciairq			; enable cia irq's
 	ldy #$00
-	sty $16
+	sty tod_state			; init TOD state to 0 = ok
 	lda #SYSTEMBANK
-	sta IndirectBank
-	sty $43
-	sty $44
-	sty $45
-	sty $47
-	sty $48
-	sty $49
+	sta IndirectBank		; systembank for cia
+	sty time2_minutes		; init h,m,s vars to 0
+	sty time2_seconds
+	sty time2_10th
+	sty time1_minutes
+	sty time1_seconds
+	sty time1_10th
 	lda #$01
-	sta $42
-	sta $46
-l25b8:	lda $45
-	sta $49
-	jsr l2670
-	lda $16
-	bne l261e
-	lda $44
-	beq l25b8
-	jsr playsnd
+	sta time2_hours			; init hours vars to 1
+	sta time1_hours
+; test 10x 10th change in first second
+chk10lp:lda time2_10th
+	sta time1_10th			; copy 10th to time2
+	jsr todchk1			; check if TOD increases one 10th
+	lda tod_state
+	bne todfai1			; branch -> TOD failure
+	lda time2_seconds
+	beq chk10lp			; check all 10th
+	jsr playsnd			; play sound after 1 second
+; test last 10th increases a second
 	lda #$09
-	sta $49
-l25ce:	lda $44
-	sta $48
-	jsr l2670
-	lda $16
-	bne l261e
-	lda $43
-	beq l25ce
+	sta time1_10th
+chkslp: lda time2_seconds
+	sta time1_seconds
+	jsr todchk1
+	lda tod_state
+	bne todfai1			; branch -> TOD failure
+	lda time2_minutes
+	beq chkslp			; check all seconds
 	jsr playsnd
+; test minutes change
 	lda #$59
-	sta $48
-l25e4:	lda $43
-	sta $47
-	jsr l2670
-	lda $16
-	bne l261e
-	lda $42
+	sta time1_seconds
+chkmlp:	lda time2_minutes
+	sta time1_minutes
+	jsr todchk1
+	lda tod_state
+	bne todfai1			; branch -> TOD failure
+	lda time2_hours
 	cmp #$01
-	beq l25e4
+	beq chkmlp			; check all minutes
 	jsr playsnd
+; test hours change
 	lda #$59
-	sta $47
-l25fc:	lda $42
-	sta $46
-	jsr l2670
-	lda $16
-	bne l261e
-	lda $42
+	sta time1_minutes
+chkhlp:	lda time2_hours
+	sta time1_hours
+	jsr todchk1
+	lda tod_state
+	bne todfai1			; branch -> TOD failure
+	lda time2_hours
 	cmp #$01
-	bne l2613
+	bne chkh12			; skip if not 1
 	lda #$81
-	sta $42
-	bne l25fc
-l2613:	cmp #$12
-	bne l25fc
-	sta $46
-	jsr l2670
-	lda $16
-l261e:	bne l2653
+	sta time2_hours			; set pm
+	bne chkhlp			; check all hours
+chkh12:	cmp #$12
+	bne chkhlp			; check all hours
+	sta time1_hours
+	jsr todchk1
+	lda tod_state			; load state
+todfai1:bne todfail			; branch -> TOD failure
+; TOD h,m,s,10th increasing ok -> final tests
 	lda (cia+icr),y
 	lda #$7f
 	sta (cia+icr),y
 	lda #$80
 	sta ($9d),y
-	lda $42
+	lda time2_hours
 	sta (cia+todhr),y
-	lda $43
+	lda time2_minutes
 	sta (cia+todmin),y
-	lda $44
+	lda time2_seconds
 	sta (cia+todsec),y
-	lda $45
+	lda time2_10th
 	clc
 	adc #$01
 	sta (cia+tod10),y
-	sty pointer1
-	sty pointer1+1
+	sty tod_count1
+	sty tod_count2
 l2641:	lda (cia+icr),y
 	bne l264f
-	dec pointer1
+	dec tod_count1
 	bne l2641
-	dec pointer1+1
+	dec tod_count2
 	bne l2641
-	beq l2653
+	beq todfail			; branch -> TOD failure
 l264f:	cmp #$04
 	beq l266f
-l2653:	lda #$ff
+; tod fails
+todfail:lda #$ff
 	sta $1b
 	lda #$bf
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr l2b3e
+	jsr drawbad
 	lda $1c
 	bne l266f
 	ldx #$33
 	bne l266c
-	ldx #$34
+	ldx #$34			; "TNT"
 l266c:	jsr drawtxt			; sub: draw screen text
 l266f:	rts
 ; ----------------------------------------------------------------------------
-; 
-l2670:	sed
-	sty pointer1
-	sty pointer1+1
-	sty $4b
-	lda $46
-	sta $42
-	sta (cia+todhr),y
-	lda $47
-	sta $43
+; set TOD to time1 and set time2 = time1 + one 10th
+; count for TOD change and compares to time2
+todchk1:sed				; decimal mode
+	sty tod_count1			; init to $00
+	sty tod_count2
+	sty tod_count3
+	lda time1_hours
+	sta time2_hours
+	sta (cia+todhr),y		; set TOD starting with hours (halts TOD) to time1
+	lda time1_minutes
+	sta time2_minutes
 	sta (cia+todmin),y
-	lda $48
-	sta $44
+	lda time1_seconds
+	sta time2_seconds
 	sta (cia+todsec),y
-	lda $49
-	sta (cia+tod10),y
+	lda time1_10th
+	sta (cia+tod10),y		; set TOD 10th (starts TOD)
 	clc
 	adc #$01
-	sta $45
+	sta time2_10th			; set time2 = time1 + one 10th
 	cmp #$10
-	bne l26d5
-	sty $45
+	bne chktod			; skip if < 10
+	sty time2_10th			; reset time2 10th
 	clc
-	lda $44
+	lda time2_seconds
 	adc #$01
-	sta $44
+	sta time2_seconds		; inc time2 seconds
 	cmp #$60
-	bne l26d5
-	sty $44
+	bne chktod			; skip if < 60
+	sty time2_seconds		; reset time2 seconds
 	clc
-	lda $43
+	lda time2_minutes
 	adc #$01
-	sta $43
+	sta time2_minutes		; inc time2 minutes
 	cmp #$60
-	bne l26d5
-	sty $43
+	bne chktod			; skip if < 60
+	sty time2_minutes		; reset time minutes
 	clc
-	lda $42
+	lda time2_hours
 	adc #$01
-	sta $42
-	and #$1f
+	sta time2_hours
+	and #$1f			; isolate hours (without pm flag)
 	cmp #$13
-	bne l26c7
-	lda $42
-	and #$81
-	sta $42
-	bne l26cf
-l26c7:	cmp #$12
-	beq l26cf
+	bne chk12			; branch if time2 hours <>13
+	lda time2_hours			; load time2 hours with pm flag
+	and #$81			; at 13 reset hours to 1, preserve pm flag
+	sta time2_hours
+; *************** WHY toggle AM/PM at 13 ???? *******************
+	bne togglpm			; jump always -> toggle am/pm
+chk12:	cmp #$12
+	beq togglpm			; if hours = 12 -> toggle pm flag
+; *************** WHY toggle AM/PM at 1 ???? *******************
 	cmp #$01
-	bne l26d5
-l26cf:	lda #$80
-	eor $42
-	sta $42
-l26d5:	lda (cia+tod10),y
-	cmp $49
-	bne l26e9
-	dec pointer1
-	bne l26d5
-	dec pointer1+1
-	bne l26d5
-	dec $4b
-	bne l26d5
-	beq l26ff
-l26e9:	cmp $45
-	bne l26ff
+	bne chktod			; branch if hours > 1 and < 12
+togglpm:lda #$80
+	eor time2_hours			; toogle pm flag
+	sta time2_hours
+; count time for change of TOD to time1 init value
+chktod:	lda (cia+tod10),y
+	cmp time1_10th
+	bne todchg			; TOD time has changed
+	dec tod_count1			; dec counter if no change
+	bne chktod
+	dec tod_count2
+	bne chktod
+	dec tod_count3
+	bne chktod
+	beq todbad			; if TOD doesn't change in 999999 cycles -> bad
+; compare new time to time2
+todchg:	cmp time2_10th			; compare if TOD is now = time2
+	bne todbad			; if not -> failure
 	lda (cia+todsec),y
-	cmp $44
-	bne l26ff
+	cmp time2_seconds
+	bne todbad
 	lda (cia+todmin),y
-	cmp $43
-	bne l26ff
+	cmp time2_minutes
+	bne todbad
 	lda (cia+todhr),y
-	cmp $42
-	beq l2703
-l26ff:	lda #$ff
-	sta $16
-l2703:	cld
+	cmp time2_hours
+	beq todok
+todbad:	lda #$ff			; state = TOD bad
+	sta tod_state
+todok:	cld				; reset decimal flag
 	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -1530,7 +1554,7 @@ l2af4:	lda $27
 	rol
 	sta $27
 	bcc l2aff
-	jsr l2b3e
+	jsr drawbad
 l2aff:	lda #$05
 	clc
 	adc pointer3
@@ -1556,7 +1580,7 @@ l2b1c:	lda pointer1+1
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr l2b3e
+	jsr drawbad
 	bmi l2b11
 l2b2f:	lda #$a6
 	sta pointer3
@@ -1565,40 +1589,43 @@ l2b2f:	lda #$a6
 	lda CodeBank
 	jsr l2b40
 	bmi l2b11
-l2b3e:	lda #SYSTEMBANK
-l2b40:	sta IndirectBank
+; draw bad chip reverse
+drawbad:lda #SYSTEMBANK
+l2b40:	sta IndirectBank		; systembank for screen
 	tya
-	pha
+	pha				; preserve y reg
 	ldy #$00
-	lda (pointer3),y
-	bmi l2b7b
+	lda (pointer3),y		; load screen char at pointer3
+	bmi alrebad			; skip if already reverse
 	lda pointer3
-	sta pointer4
+	sta pointer4			; copy pointer3 to 4
 	lda pointer3+1
-	sta pointer4+1
-	ldx #$02
-l2b54:	ldy #$02
-l2b56:	lda (pointer4),y
+	sta pointer4+1	
+; draw 2 lines chip number reverse
+	ldx #$02			; 2 lines
+revline:ldy #$02			; 3 chars
+revlp:	lda (pointer4),y
 	ora #$80
-	sta (pointer4),y
+	sta (pointer4),y		; reverse char
 	dey
-	bpl l2b56
-	lda #$50
+	bpl revlp			; next char
+	lda #80				; add 80 chars = one line
 	clc
 	adc pointer4
 	sta pointer4
-	bcc l2b6a
-	inc pointer4+1
-l2b6a:	dex
-	bne l2b54
+	bcc +				; skip if no carry
+	inc pointer4+1			; inc pointer hi
++	dex
+	bne revline			; draw next line
+; draw BAD in third line
 	ldy #$02
-l2b6f:	lda chip_bad,y
+badlp:	lda chip_bad,y			; draw BAD in chip
 	and #$3f
-	ora #$80
+	ora #$80			; reverse
 	sta (pointer4),y
 	dey
-	bpl l2b6f
-l2b7b:	pla
+	bpl badlp
+alrebad:pla
 	tay
 	rts
 ; ----------------------------------------------------------------------------
