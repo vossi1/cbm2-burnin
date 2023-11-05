@@ -18,11 +18,16 @@ PC			= $2 *2		; port c
 MIR			= $5 *2		; interrupt mask register
 CR			= $6 *2		; control register
 ; CIA register
+talo			= $4 *2		; timer a lo
+tahi			= $5 *2		; timer a hi
+tblo			= $6 *2		; timer b lo
+tbhi			= $7 *2		; timer b hi
 tod10			= $8 *2		; tod 10th of seconds
 todsec			= $9 *2		; tod seconds
 todmin			= $a *2		; tod monutes
 todhr			= $b *2		; tod hours
 icr			= $d *2		; interrupt control register
+cra			= $e *2		; control register b
 crb			= $f *2		; control register b
 ; SID register
 OSC1			= $00 *2	; oscillator 1
@@ -572,9 +577,9 @@ timtest:sei
 	jsr eciairq
 	ldy #$00
 	lda #$00
-	sta ($9d),y
+	sta (cia+crb),y
 	lda #$08
-	sta ($9b),y
+	sta (cia+cra),y
 	sty $16
 	ldx #$01
 	jsr l2527
@@ -585,7 +590,7 @@ l239a:	jsr l2549
 	dec $16
 l23a1:	ldx #$01
 	lda #$00
-	sta ($9b),y
+	sta (cia+cra),y
 	jsr l2527
 	beq l23ae
 	dec $16
@@ -593,139 +598,139 @@ l23ae:	ldx #$01
 	jsr l2549
 	beq l23b7
 	dec $16
-l23b7:	lda ($9b),y
+l23b7:	lda (cia+cra),y
 	and #$fe
-	sta ($9b),y
+	sta (cia+cra),y
 	lda #$08
-	sta ($9d),y
+	sta (cia+crb),y
 	ldx #$02
 	jsr l2538
 	beq l23ca
 	dec $16
-l23ca:	lda ($9d),y
+l23ca:	lda (cia+crb),y
 	and #$fe
-	sta ($9d),y
+	sta (cia+crb),y
 	lda #$40
 	sta temp_dec_value
 l23d4:	lda #$00
-	sta ($9b),y
-	sta ($9d),y
+	sta (cia+cra),y
+	sta (cia+crb),y
 	lda #$55
-	sta ($87),y
-	sta ($89),y
-	lda ($87),y
+	sta (cia+talo),y
+	sta (cia+tahi),y
+	lda (cia+talo),y
 	cmp #$55
 	beq l23e8
 	dec $16
-l23e8:	lda ($89),y
+l23e8:	lda (cia+tahi),y
 	cmp #$55
 	beq l23f0
 	dec $16
 l23f0:	lda #$aa
-	sta ($89),y
-	sta ($87),y
-	lda ($87),y
+	sta (cia+tahi),y
+	sta (cia+talo),y
+	lda (cia+talo),y
 	cmp #$55
 	beq l23fe
 	dec $16
-l23fe:	lda ($89),y
+l23fe:	lda (cia+tahi),y
 	cmp #$aa
 	beq l2408
 	lda #$ff
 	sta $16
 l2408:	lda #$10
-	sta ($9b),y
-	lda ($87),y
+	sta (cia+cra),y
+	lda (cia+talo),y
 	cmp #$aa
 	beq l2414
 	dec $16
-l2414:	lda ($89),y
+l2414:	lda (cia+tahi),y
 	cmp #$aa
 	beq l241c
 	dec $16
 l241c:	lda #$55
-	sta ($8b),y
-l2420:	sta ($8d),y
-	lda ($8b),y
+	sta (cia+tblo),y
+l2420:	sta (cia+tbhi),y
+	lda (cia+tblo),y
 	cmp #$55
 	beq l242a
 	dec $16
-l242a:	lda ($8d),y
+l242a:	lda (cia+tbhi),y
 	cmp #$55
 	beq l2432
 	dec $16
 l2432:	lda #$aa
-	sta ($8d),y
-	sta ($8b),y
-	lda ($8b),y
+	sta (cia+tbhi),y
+	sta (cia+tblo),y
+	lda (cia+tblo),y
 	cmp #$55
 	beq l2440
 	dec $16
-l2440:	lda ($8d),y
+l2440:	lda (cia+tbhi),y
 	cmp #$aa
 	beq l2448
 	dec $16
 l2448:	lda #$10
-	sta ($9d),y
-	lda ($8b),y
+	sta (cia+crb),y
+	lda (cia+tblo),y
 	cmp #$aa
 	beq l2454
 	dec $16
-l2454:	lda ($8d),y
+l2454:	lda (cia+tbhi),y
 	cmp #$aa
 	beq l245c
 	dec $16
 l245c:	lda #$09
-	sta ($9b),y
+	sta (cia+cra),y
 	lda #$cc
-	sta ($87),y
-	sta ($89),y
-	lda ($87),y
+	sta (cia+talo),y
+	sta (cia+tahi),y
+	lda (cia+talo),y
 	cmp #$aa
 	bmi l246e
 	dec $16
-l246e:	lda ($89),y
+l246e:	lda (cia+tahi),y
 	cmp #$aa
 	beq l2476
 	dec $16
 l2476:	lda #$19
 	ldx #$00
-	sta ($9b),y
+	sta (cia+cra),y
 	txa
-	sta ($9b),y
-	lda ($87),y
+	sta (cia+cra),y
+	lda (cia+talo),y
 	and #$fe
 	cmp #$c4
 	beq l2489
 	dec $16
-l2489:	lda ($89),y
+l2489:	lda (cia+tahi),y
 	cmp #$cc
 	beq l2491
 	dec $16
 l2491:	lda #$09
-	sta ($9d),y
+	sta (cia+crb),y
 	lda #$cc
-	sta ($8b),y
-	sta ($8d),y
-	lda ($8b),y
+	sta (cia+tblo),y
+	sta (cia+tbhi),y
+	lda (cia+tblo),y
 	cmp #$aa
 	bmi l24a3
 	dec $16
-l24a3:	lda ($8d),y
+l24a3:	lda (cia+tbhi),y
 	cmp #$aa
 	beq l24ab
 	dec $16
 l24ab:	lda #$19
 	ldx #$00
-	sta ($9d),y
+	sta (cia+crb),y
 	txa
-	sta ($9d),y
-	lda ($8b),y
+	sta (cia+crb),y
+	lda (cia+tblo),y
 	and #$fe
 	cmp #$c4
 	beq l24be
 	dec $16
-l24be:	lda ($8d),y
+l24be:	lda (cia+tbhi),y
 	cmp #$cc
 	beq l24c6
 	dec $16
@@ -733,33 +738,33 @@ l24c6:	dec temp_dec_value
 	bmi l24cd
 	jmp l23d4
 l24cd:	lda #$00
-	sta ($89),y
-	sta ($8d),y
+	sta (cia+tahi),y
+	sta (cia+tbhi),y
 	lda #$01
-	sta ($8b),y
+	sta (cia+tblo),y
 	lda #$08
-	sta ($87),y
+	sta (cia+talo),y
 	lda #$51
-	sta ($9d),y
+	sta (cia+crb),y
 	lda #$19
-	sta ($9b),y
+	sta (cia+cra),y
 	tax
 l24e4:	dex
 	bne l24e4
 	txa
-	sta ($9b),y
-	sta ($9d),y
-	lda ($8d),y
+	sta (cia+cra),y
+	sta (cia+crb),y
+	lda (cia+tbhi),y
 	beq l24f2
 	dec $16
-l24f2:	lda ($8b),y
+l24f2:	lda (cia+tblo),y
 	beq l24f8
 	dec $16
-l24f8:	lda ($89),y
+l24f8:	lda (cia+tahi),y
 	cmp #$00
 	beq l2500
 	dec $16
-l2500:	lda ($87),y
+l2500:	lda (cia+talo),y
 	cmp #$08
 	beq l2508
 	dec $16
@@ -783,19 +788,19 @@ tmrend:	rts
 ; ----------------------------------------------------------------------------
 ; 
 l2527:	lda #$88
-	sta ($87),y
-	sta ($89),y
-	lda ($9b),y
+	sta (cia+talo),y
+	sta (cia+tahi),y
+	lda (cia+cra),y
 	ora #$01
-	sta ($9b),y
+	sta (cia+cra),y
 	jsr l257e
 	bne l2549
 l2538:	lda #$88
-	sta ($8b),y
-	sta ($8d),y
-	lda ($9d),y
+	sta (cia+tblo),y
+	sta (cia+tbhi),y
+	lda (cia+crb),y
 	ora #$01
-	sta ($9d),y
+	sta (cia+crb),y
 	jsr l257e
 	bne l2549
 l2549:	jsr cciairq
