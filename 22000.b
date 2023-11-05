@@ -23,6 +23,7 @@ todsec			= $9 *2		; tod seconds
 todmin			= $a *2		; tod monutes
 todhr			= $b *2		; tod hours
 icr			= $d *2		; interrupt control register
+crb			= $f *2		; control register b
 ; SID register
 OSC1			= $00 *2	; oscillator 1
 OSC3			= $0e *2	; oscillator 2
@@ -41,8 +42,10 @@ VOLUME			= $18 *2	; volume
 !addr tod_count1	= $12		; tod test counter
 !addr tod_count2	= $13		; tod test counter
 !addr screen_pointer	= $14		; 16bit pointer screen
-!addr tod_state		= $16		; tod state - $ff = bad
+!addr tod_state		= $16		; TOD state - $ff = bad
 ;			= $16
+!addr cia_tod_fail	= $1b		; 0 = TOD ok, $ff = tod failed
+!addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
 !addr temp_pchksum1	= $1d		; temp test program checksum
 !addr temp_pchksum2	= $1e		; temp test program checksum
 !addr actual_codebank	= $20		; actual code bank
@@ -555,7 +558,7 @@ rsumlp:	clc
 	inc pointer1+1
 	cmp pointer1+1
 	beq +
-	jsr drawbad
+	jsr drawbad			; draw chip "BAD"
 +	rts
 ; ----------------------------------------------------------------------------
 ; timer tests
@@ -761,20 +764,22 @@ l2500:	lda ($87),y
 	beq l2508
 	dec $16
 l2508:	lda $16
-	beq l2526
+	beq tmrend
+; timer fails
 	lda #$ff
-	sta $1c
+	sta cia_tmr_fail		; remember timer failed
 	lda #$bf
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad
-	lda $1b
-	ldx #$2d
-	bne l2523
-	ldx #$34
-l2523:	jsr drawtxt			; sub: draw screen text
-l2526:	rts
+	jsr drawbad			; draw chip "BAD"
+	lda cia_tod_fail
+	ldx #$2d			; "TMR"
+	bne drawtmr			; jump always -> draw text
+	; unused - never reachable
+	ldx #$34			; "TNT"
+drawtmr:jsr drawtxt			; sub: draw screen text
+tmrend:	rts
 ; ----------------------------------------------------------------------------
 ; 
 l2527:	lda #$88
@@ -842,7 +847,7 @@ cciairq:ldy #$00
 	rti				; unused
 ; ----------------------------------------------------------------------------
 ; TOD tests
-todtest:sei
+todtest:sei				; disable interrupts (ALARM test checks reg)
 	ldx #$35			; "6526 TOD TESTS"
 	jsr drawtxt			; sub: draw screen text
 	jsr iciapt			; sub: init cia pointer
@@ -912,14 +917,14 @@ chkh12:	cmp #$12
 	jsr todchk1
 	lda tod_state			; load state
 todfai1:bne todfail			; branch -> TOD failure
-; TOD h,m,s,10th increasing ok -> final tests
-	lda (cia+icr),y
+; TOD alarm test
+	lda (cia+icr),y			; clear cia irq reg
 	lda #$7f
-	sta (cia+icr),y
+	sta (cia+icr),y			; clear all irq mask bits
 	lda #$80
-	sta ($9d),y
+	sta (cia+crb),y			; set bit #7 - TOD ALARM
 	lda time2_hours
-	sta (cia+todhr),y
+	sta (cia+todhr),y		; set ALARM
 	lda time2_minutes
 	sta (cia+todmin),y
 	lda time2_seconds
@@ -927,38 +932,39 @@ todfai1:bne todfail			; branch -> TOD failure
 	lda time2_10th
 	clc
 	adc #$01
-	sta (cia+tod10),y
-	sty tod_count1
+	sta (cia+tod10),y		; set ALARM to time2 + one 10th
+	sty tod_count1			; clear counter
 	sty tod_count2
-l2641:	lda (cia+icr),y
-	bne l264f
+alarmlp:lda (cia+icr),y
+	bne chkalar			; irq -> test for ALARM irq bit #2
 	dec tod_count1
-	bne l2641
+	bne alarmlp			; wait for ALARM
 	dec tod_count2
-	bne l2641
+	bne alarmlp			; wait for ALARM
 	beq todfail			; branch -> TOD failure
-l264f:	cmp #$04
-	beq l266f
+chkalar:cmp #$04			; test ALARM irq bit
+	beq todend			; skip if tod ALARM OK	
 ; tod fails
 todfail:lda #$ff
-	sta $1b
+	sta cia_tod_fail		; remember tod failed
 	lda #$bf
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad
-	lda $1c
-	bne l266f
-	ldx #$33
-	bne l266c
+	jsr drawbad			; draw chip BAD
+	lda cia_tmr_fail
+	bne todend			; skip if timer already failed 
+	ldx #$33			; "TOD"
+	bne drawtod			; jump always -> draw text
+; unused - never reachable
 	ldx #$34			; "TNT"
-l266c:	jsr drawtxt			; sub: draw screen text
-l266f:	rts
+drawtod:jsr drawtxt			; sub: draw screen text
+todend:	rts
 ; ----------------------------------------------------------------------------
 ; set TOD to time1 and set time2 = time1 + one 10th
 ; count for TOD change and compares to time2
 todchk1:sed				; decimal mode
-	sty tod_count1			; init to $00
+	sty tod_count1			; clear counter
 	sty tod_count2
 	sty tod_count3
 	lda time1_hours
@@ -999,14 +1005,14 @@ todchk1:sed				; decimal mode
 	and #$1f			; isolate hours (without pm flag)
 	cmp #$13
 	bne chk12			; branch if time2 hours <>13
+; set hours at 13 to 1 and toggles AM/PM
 	lda time2_hours			; load time2 hours with pm flag
 	and #$81			; at 13 reset hours to 1, preserve pm flag
 	sta time2_hours
-; *************** WHY toggle AM/PM at 13 ???? *******************
 	bne togglpm			; jump always -> toggle am/pm
 chk12:	cmp #$12
 	beq togglpm			; if hours = 12 -> toggle pm flag
-; *************** WHY toggle AM/PM at 1 ???? *******************
+; toggles AM/PM back at 1
 	cmp #$01
 	bne chktod			; branch if hours > 1 and < 12
 togglpm:lda #$80
@@ -1554,7 +1560,7 @@ l2af4:	lda $27
 	rol
 	sta $27
 	bcc l2aff
-	jsr drawbad
+	jsr drawbad			; draw chip "BAD"
 l2aff:	lda #$05
 	clc
 	adc pointer3
@@ -1580,7 +1586,7 @@ l2b1c:	lda pointer1+1
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad
+	jsr drawbad			; draw chip "BAD"
 	bmi l2b11
 l2b2f:	lda #$a6
 	sta pointer3
