@@ -51,8 +51,8 @@ VOLUME			= $18 *2	; volume
 ;			= $16
 !addr cia_tod_fail	= $1b		; 0 = TOD ok, $ff = tod failed
 !addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
-!addr temp_pchksum1	= $1d		; temp test program checksum
-!addr temp_pchksum2	= $1e		; temp test program checksum
+!addr temp_ProgramChecksum1	= $1d		; temp test program checksum
+!addr temp_ProgramChecksum2	= $1e		; temp test program checksum
 !addr actual_codebank	= $20		; actual code bank
 !addr cycles		= $21		; 4 bytes cycle counter
 !addr temp_and_value	= $2a		; temp screen data and value
@@ -116,61 +116,61 @@ chkbklp:sta (pointer1),y
 cbm256:	lda #$04
 	sta banks			; store 4 banks
 ; draw chips
-drawscr:jsr clrscrn			; sub: clear screen
+drawscr:jsr ClearScreen			; sub: clear screen
 	ldx #0
-	jsr chipadr			; sub: set pointer2 to chip graphics address
+	jsr SetChipAddress		; sub: set pointer2 to chip graphics address
 	lda #$f0
 	ldy #$d0
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$20
 	ldy #$d3
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$50
 	ldy #$d5
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	ldx #3
-	jsr chipadr			; sub: set pointer2 to chip graphics address
+	jsr SetChipAddress		; sub: set pointer2 to chip graphics address
 	lda #$30
 	ldy #$d2
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$60
 	ldy #$d4
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$90
 	ldy #$d6
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	ldx #2
-	jsr chipadr			; sub: set pointer2 to chip graphics address
+	jsr SetChipAddress		; sub: set pointer2 to chip graphics address
 	lda #$e0
 	ldy #$d1
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$10
 	ldy #$d4
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$40
 	ldy #$d6
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	ldx #1
-	jsr chipadr			; sub: set pointer2 to chip graphics address
+	jsr SetChipAddress		; sub: set pointer2 to chip graphics address
 	lda #$40
 	ldy #$d1
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$70
 	ldy #$d3
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 	lda #$a0
 	ldy #$d5
-	jsr drawics			; sub: draw chip graphics to screen
+	jsr DrawChips			; sub: draw chip graphics to screen
 ; draw screen text
 	ldx #$00
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	ldx #$01
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	ldx #$02
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	ldx #$2b
-	jsr drawtxt			; sub: draw screen text
-	jsr itpi2pt			; sub: init tpi2 pointer
+	jsr DrawText			; sub: draw screen text
+	jsr InitTPI2Pointer		; sub: init tpi2 pointer
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank for IO
 	ldy #$00
@@ -190,13 +190,13 @@ drawscr:jsr clrscrn			; sub: clear screen
 	bne drwiclp			; jump always
 ; high profile
 hiprof:	ldx #$2f
-	jsr drawtxt			; sub: draw screen text "HIGH"
+	jsr DrawText			; sub: draw screen text "HIGH"
 	ldx #$08
 	stx temp_count_sum
 	ldx #$06			; lines *---- ----* 
 	stx temp1
 -	ldx temp1
-	jsr drawpur			; sub: draw without and
+	jsr DrawTextPure		; sub: draw without and
 	inc temp1
 	dec temp_count_sum
 	bne -
@@ -206,7 +206,7 @@ hiprof:	ldx #$2f
 	stx temp1
 ; draw lines+ics low / ics only high
 drwiclp:ldx temp1
-	jsr drawpur
+	jsr DrawTextPure
 	inc temp1
 	dec temp_count_sum
 	bne drwiclp
@@ -216,7 +216,7 @@ drwiclp:ldx temp1
 	ldx #$17			; segment, execute, test
 	stx temp1
 -	ldx temp1
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	inc temp1
 	dec temp_count_sum
 	bne -
@@ -262,13 +262,14 @@ drwiclp:ldx temp1
 	cmp #$04
 	beq +				; skip for 256kB
 	ldx #$38			; NO RAM
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	ldx #$37			; NO RAM
-	jsr drawtxt			; sub: draw screen text
-+	jmp main
+	jsr DrawText			; sub: draw screen text
++	jmp Main
 ; ----------------------------------------------------------------------------
 ; draw chip graphics to screen
-drawics:sta pointer1
+DrawChips:
+	sta pointer1
 	sty pointer1+1
 	ldx CodeBank
 	stx actual_codebank		; remember code bank
@@ -300,14 +301,16 @@ drawlp1:lda actual_codebank
 	rts
 ; ----------------------------------------------------------------------------
 ; set pointer2 to chip graphics address
-chipadr:lda chip_data_lo,x
+SetChipAddress:
+	lda chip_data_lo,x
 	sta pointer2
 	lda chip_data_hi,x
 	sta pointer2+1
 	rts
 ; ----------------------------------------------------------------------------
 ; Clear screen
-clrscrn:lda #>ScreenRAM
+ClearScreen:
+	lda #>ScreenRAM
 	sta pointer1+1
 	ldy #<ScreenRAM
 	sty pointer1
@@ -324,30 +327,31 @@ clrsclp:sta (pointer1),y
 	rts
 ; ----------------------------------------------------------------------------
 ; main test program loop
-main:	jsr isidpt			; sub: init sid pointer
-	jsr icrtpt			; sub: init crt pointer
+Main:	
+	jsr InitSIDPointer		; sub: init sid pointer
+	jsr InitCRTPointer		; sub: init crt pointer
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
-	jsr playsnd			; sub: play ping sound
-	jsr pchksum			; calc program checksum (F5)
-	jsr romsums			; calc and print rom checksums
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr delay
-	jsr timtest			; timer tests
-	jsr todtest			; TOD test
-	jsr ramtest			; RAM tests
+	jsr PlaySound			; sub: play ping sound
+	jsr ProgramChecksum		; calc program checksum (F5)
+	jsr ROMChecksums		; calc and print rom checksums
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr DummySub
+	jsr TimerTest			; timer tests
+	jsr TODTest			; TOD test
+	jsr RAMTest			; RAM tests
 ; increase cycles
 	ldx #$03			; four bytes (00000000-99999999)
 	sed				; decimal mode
@@ -378,11 +382,11 @@ loadbyt:lda cycles,x			; load byte
 	and #$f0			; isloate high nible (decimal!)
 	beq prdiglo			; skip high nible printing if zero
 ; print digits
-prdighi:jsr scrcodh			; calc screen code for high nibble
+prdighi:jsr ScreencodeHighNibble	; calc screen code for high nibble
 	sta (pointer1),y		; print low nible digit to screen position
 	iny
 prdiglo:lda cycles,x			; load digit
-	jsr scrcode			; calc screen code for low nibble
+	jsr ScreencodeLowNibble		; calc screen code for low nibble
 	sta (pointer1),y		; print digit to screen position
 	iny
 	inx
@@ -390,9 +394,11 @@ prdiglo:lda cycles,x			; load digit
 	cpx #$04			; check for last digit
 	bne prdighi			; next digit
 	cld				; disable decimal mode
-	jmp main			; start over
+	jmp Main			; start over
+; ----------------------------------------------------------------------------
 ; delay subroutine
-delay:	rts				; delay only
+DummySub:
+	rts				; delay only
 ; ----------------------------------------------------------------------------
 ; 
 l225a:	lda IndirectBank
@@ -411,7 +417,8 @@ l225a:	lda IndirectBank
 	rts
 ; ----------------------------------------------------------------------------
 ; play ping sound
-playsnd:ldy #$00
+PlaySound:
+	ldy #$00
 	lda IndirectBank
 	sta actual_indirbank		; remember bank
 	lda #SYSTEMBANK			; 15 also for volume	
@@ -434,7 +441,8 @@ playsnd:ldy #$00
 	rts
 ; ----------------------------------------------------------------------------
 ; calc program checksum (F5)
-pchksum:ldy #<CODEEND			; programend low
+ProgramChecksum:
+	ldy #<CODEEND			; programend low
 	lda #$00
 	sta pointer1
 	sta temp2
@@ -454,19 +462,19 @@ cksumlp:lda (pointer1),y		; load code byte
 	dex
 	bpl cksumlp			; next page
 ; check if zeropage with checksum is ok
-	lda temp_pchksum1
+	lda temp_ProgramChecksum1
 	bne +				; not zero from clear zp -> faulty
-	dec temp_pchksum1
+	dec temp_ProgramChecksum1
 	lda temp2			; checksum
-	sta temp_pchksum2
+	sta temp_ProgramChecksum2
 +	lda temp2
-	cmp temp_pchksum2
+	cmp temp_ProgramChecksum2
 	beq prntsum			; zeropage ok -> print checksum
 	ldx #$2e		
-	jsr drawrev			; draw bad program checksum reverse
+	jsr DrawTextReverse		; draw bad program checksum reverse
 ; print checksum
 prntsum:lda temp2			; checksum
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	ldx #$2e
@@ -483,7 +491,8 @@ prntsum:lda temp2			; checksum
 ; ----------------------------------------------------------------------------
 ; calc and print rom checksums ***** FAULTY *****
 ; with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 
-romsums:clv				; NO SENSE - first adc changes overflow flag
+ROMChecksums:
+	clv				; NO SENSE - first adc changes overflow flag
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
 	ldy #$00			; first screen position
@@ -549,7 +558,7 @@ rsumlp:	clc
 	adc #$00			; add carry of screen pos lo
 	sta pointer3+1
 	lda temp_count_sum
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	sta (pointer3),y		; print to screen
@@ -563,15 +572,16 @@ rsumlp:	clc
 	inc pointer1+1
 	cmp pointer1+1
 	beq +
-	jsr drawbad			; draw chip "BAD"
+	jsr DrawBad			; draw chip "BAD"
 +	rts
 ; ----------------------------------------------------------------------------
 ; timer tests
-timtest:sei
+TimerTest:
+	sei
 	ldx #$36
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	jsr l2cb9
-	jsr iciapt			; sub: init cia pointer
+	jsr InitCIAPointer		; sub: init cia pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
 	jsr eciairq
@@ -777,13 +787,13 @@ l2508:	lda $16
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad			; draw chip "BAD"
+	jsr DrawBad			; draw chip "BAD"
 	lda cia_tod_fail
 	ldx #$2d			; "TMR"
 	bne drawtmr			; jump always -> draw text
 	; unused - never reachable
 	ldx #$34			; "TNT"
-drawtmr:jsr drawtxt			; sub: draw screen text
+drawtmr:jsr DrawText			; sub: draw screen text
 tmrend:	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -852,10 +862,11 @@ cciairq:ldy #$00
 	rti				; unused
 ; ----------------------------------------------------------------------------
 ; TOD tests
-todtest:sei				; disable interrupts (ALARM test checks reg)
+TODTest:
+	sei				; disable interrupts (ALARM test checks reg)
 	ldx #$35			; "6526 TOD TESTS"
-	jsr drawtxt			; sub: draw screen text
-	jsr iciapt			; sub: init cia pointer
+	jsr DrawText			; sub: draw screen text
+	jsr InitCIAPointer			; sub: init cia pointer
 	jsr eciairq			; enable cia irq's
 	ldy #$00
 	sty tod_state			; init TOD state to 0 = ok
@@ -873,41 +884,41 @@ todtest:sei				; disable interrupts (ALARM test checks reg)
 ; test 10x 10th change in first second
 chk10lp:lda time2_10th
 	sta time1_10th			; copy 10th to time2
-	jsr todchk1			; check if TOD increases one 10th
+	jsr TODCheck			; check if TOD increases one 10th
 	lda tod_state
 	bne todfai1			; branch -> TOD failure
 	lda time2_seconds
 	beq chk10lp			; check all 10th
-	jsr playsnd			; play sound after 1 second
+	jsr PlaySound			; play sound after 1 second
 ; test last 10th increases a second
 	lda #$09
 	sta time1_10th
 chkslp: lda time2_seconds
 	sta time1_seconds
-	jsr todchk1
+	jsr TODCheck
 	lda tod_state
 	bne todfai1
 	lda time2_minutes
 	beq chkslp			; check all seconds
-	jsr playsnd
+	jsr PlaySound
 ; test minutes change
 	lda #$59
 	sta time1_seconds
 chkmlp:	lda time2_minutes
 	sta time1_minutes
-	jsr todchk1
+	jsr TODCheck
 	lda tod_state
 	bne todfai1			; branch -> TOD failure
 	lda time2_hours
 	cmp #$01
 	beq chkmlp			; check all minutes
-	jsr playsnd
+	jsr PlaySound
 ; test hours change
 	lda #$59
 	sta time1_minutes
 chkhlp:	lda time2_hours
 	sta time1_hours
-	jsr todchk1
+	jsr TODCheck
 	lda tod_state
 	bne todfai1			; branch -> TOD failure
 	lda time2_hours
@@ -919,7 +930,7 @@ chkhlp:	lda time2_hours
 chkh12:	cmp #$12
 	bne chkhlp			; check all hours
 	sta time1_hours
-	jsr todchk1
+	jsr TODCheck
 	lda tod_state			; load state
 todfai1:bne todfail			; branch -> TOD failure
 ; TOD alarm test
@@ -956,19 +967,20 @@ todfail:lda #$ff
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad			; draw chip BAD
+	jsr DrawBad			; draw chip BAD
 	lda cia_tmr_fail
 	bne todend			; skip if timer already failed 
 	ldx #$33			; "TOD"
 	bne drawtod			; jump always -> draw text
 ; unused - never reachable
 	ldx #$34			; "TNT"
-drawtod:jsr drawtxt			; sub: draw screen text
+drawtod:jsr DrawText			; sub: draw screen text
 todend:	rts
 ; ----------------------------------------------------------------------------
 ; set TOD to time1 and set time2 = time1 + one 10th
 ; count for TOD change and compares to time2
-todchk1:sed				; decimal mode
+TODCheck:
+	sed				; decimal mode
 	sty tod_count1			; clear counter
 	sty tod_count2
 	sty tod_count3
@@ -1051,8 +1063,9 @@ todbad:	lda #$ff			; state = TOD bad
 todok:	cld				; reset decimal flag
 	rts
 ; ----------------------------------------------------------------------------
-; 
-ramtest:ldy banks
+; RAM Tests
+RAMTest:
+	ldy banks
 	dey
 	sty $57
 	ldx CodeBank
@@ -1134,7 +1147,7 @@ l279f:	jsr l27a3
 ; ----------------------------------------------------------------------------
 ; 
 l27a3:	ldx #$2c
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 	lda #SYSTEMBANK
 	sta IndirectBank
 	ldy #$02
@@ -1177,9 +1190,9 @@ l27ea:	sty $41
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq l2805
-	jsr playsnd
+	jsr PlaySound
 	ldx #$0e
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 l2805:	ldy $41
 	lda $40
 	sta pointer1+1
@@ -1309,7 +1322,7 @@ l2903:	iny
 	lda pointer1+1
 	cmp $25
 	bne l28d8
-	jsr playsnd
+	jsr PlaySound
 	ldx #$13
 	jsr l2b95
 	ldx #$5a
@@ -1485,7 +1498,7 @@ l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	ldx IndirectBank
 	stx actual_indirbank
 	cpx #SYSTEMBANK
@@ -1505,12 +1518,12 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda actual_indirbank
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	tya
 	ldy #$03
 	sta (pointer3),y
 	lda pointer1+1
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	sty temp2
 	ldy #$05
 	sta (pointer3),y
@@ -1518,7 +1531,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda $29
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	sty temp2
 	ldy #$07
 	sta (pointer3),y
@@ -1526,7 +1539,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda CodeBank
-	jsr scrcodb			; calc screen code for a byte
+	jsr ScreencodesByte			; calc screen code for a byte
 	tya
 	ldy #$0b
 	sta (pointer3),y
@@ -1565,7 +1578,7 @@ l2af4:	lda $27
 	rol
 	sta $27
 	bcc l2aff
-	jsr drawbad			; draw chip "BAD"
+	jsr DrawBad			; draw chip "BAD"
 l2aff:	lda #$05
 	clc
 	adc pointer3
@@ -1591,7 +1604,7 @@ l2b1c:	lda pointer1+1
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
-	jsr drawbad			; draw chip "BAD"
+	jsr DrawBad			; draw chip "BAD"
 	bmi l2b11
 l2b2f:	lda #$a6
 	sta pointer3
@@ -1601,7 +1614,8 @@ l2b2f:	lda #$a6
 	jsr l2b40
 	bmi l2b11
 ; draw bad chip reverse
-drawbad:lda #SYSTEMBANK
+DrawBad:
+	lda #SYSTEMBANK
 l2b40:	sta IndirectBank		; systembank for screen
 	tya
 	pha				; preserve y reg
@@ -1647,7 +1661,7 @@ l2b7e:	stx $50
 	beq l2b8e
 	jsr l225a
 	ldx $50
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 l2b8e:	ldy $41
 	lda $40
 	sta pointer1+1
@@ -1660,7 +1674,7 @@ l2b95:	stx $50
 	beq l2ba5
 	jsr l225a
 	ldx $50
-	jsr drawtxt			; sub: draw screen text
+	jsr DrawText			; sub: draw screen text
 l2ba5:	ldy $25
 	dey
 	sty pointer1+1
@@ -1738,17 +1752,20 @@ l2c1f:	sta $2b
 	rts
 ; ----------------------------------------------------------------------------
 ; calc screen codes for a byte and return in a and y
-scrcodb:pha				; save value in a
-	jsr scrcode			; calc low nibble hex
+ScreencodesByte:
+	pha				; save value in a
+	jsr ScreencodeLowNibble		; calc low nibble hex
 	tay				; store low in y
 	pla
 ; calc screen code for high nibble
-scrcodh:lsr				; shift high nibble to low
+ScreencodeHighNibble:
+	lsr				; shift high nibble to low
 	lsr
 	lsr
 	lsr
 ; calc screen code dec / hex
-scrcode:and #$0f			; isolate low nibble
+ScreencodeLowNibble:
+	and #$0f			; isolate low nibble
 	cmp #$0a
 	bmi scdcalc			; branch for 0-9
 	sec
@@ -1772,25 +1789,27 @@ mul5:	clc
 	rts
 ; ----------------------------------------------------------------------------
 ; init cia pointer
-iciapt:	lda #cia
+InitCIAPointer:
+	lda #cia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
 	lda #<ciaregs
 	ldx #>ciaregs
 	ldy #$1f
-	jsr cpydata			; sub: copy data
+	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
 ; init tpi2 pointer
-itpi2pt:lda #tpi2
+InitTPI2Pointer:
+	lda #tpi2
 	sta pointer1
 	lda #$00
 	sta pointer1+1
 	lda #<tpi2regs
 	ldx #>tpi2regs
 	ldy #$0f
-	jsr cpydata			; sub: copy data
+	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
 ; init tpi1 pointer - UNUSED
@@ -1801,11 +1820,12 @@ itpi2pt:lda #tpi2
 	lda #<tpi1regs
 	ldx #>tpi1regs
 	ldy #$0f
-	jsr cpydata			; sub: copy data
+	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
 ; init crt pointer
-icrtpt:	lda #<CRT
+InitCRTPointer:
+	lda #<CRT
 	sta crtadr
 	lda #>CRT
 	sta crtadr+1
@@ -1823,18 +1843,19 @@ icrtpt:	lda #<CRT
 	lda #<aciaregs
 	ldx #>aciaregs
 	ldy #$07
-	jsr cpydata			; sub: copy data
+	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
 ; init sid pointer
-isidpt:	lda #sid
+InitSIDPointer:
+	lda #sid
 	sta pointer1
 	lda #$00
 	sta pointer1+1
 	lda #<sidregs
 	ldx #>sidregs
 	ldy #$39
-	jsr cpydata			; sub: copy data
+	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -1861,7 +1882,8 @@ l2cb9:	lda #$f0
 	rts
 ; ----------------------------------------------------------------------------
 ; copy data y+1 bytes from ax to pointer1
-cpydata:sta pointer3
+CopyPointer:
+	sta pointer3
 	stx pointer3+1
 	lda CodeBank
 	sta IndirectBank
@@ -1872,7 +1894,8 @@ cpydata:sta pointer3
 	rts
 ; ----------------------------------------------------------------------------
 ; draw reverse
-drawrev:pha
+DrawTextReverse:
+	pha
 	tya
 	pha
 	txa
@@ -1881,7 +1904,8 @@ drawrev:pha
 	sta temp_or_value
 	bne drawtx2			; jump always
 ; draw pure withour AND
-drawpur:pha
+DrawTextPure:
+	pha
 	tya
 	pha
 	txa
@@ -1891,7 +1915,8 @@ drawpur:pha
 	lda #$ff			; data and value
 	bne drawtx1			; jump always
 ; draw screen text
-drawtxt:pha				; save regs
+DrawText:
+	pha				; save regs
 	tya
 	pha
 	txa
@@ -2015,7 +2040,7 @@ execute:	!scr "EXECUTE"
 screen_pos_lo:	!byte $41, $69, $71, $99
 screen_pos_hi:	!byte $d1, $d1, $d3, $d3
 ; screen text data
-bpchksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
+bProgramChecksum:	!scr " * *  BAD PROGRAM CHECKSUM  * * "
 noram:		!scr " *************  NO RAM  *************** "
 ; screendata count -1
 scrdata_count:	!byte 45,  9, 10, 79, 79, 79, 11, 11	; data $00-$07
@@ -2032,7 +2057,7 @@ scrdata_lo:	!byte <title, <ramsegf, <romssegf, <iclow1, <iclow2, <iclow3, <line,
 		!byte <chkrbrd, <aa55, <marchinc, <decadra5, <dec5a, <incadr, <decadr00, <segment
 		!byte <segment, <segment, <segment, <segment, <segment, <segment, <segment, <segment
 		!byte <segment, <segment, <segment, <execute, <execute, <execute, <execute, <test
-		!byte <test, <test, <test, <ics, <staticram, <tmr, <bpchksum, <high
+		!byte <test, <test, <test, <ics, <staticram, <tmr, <bProgramChecksum, <high
 		!byte <ichigh1, <ichigh2, <ichigh3, <tod, <tnt, <todtests, <timertsts, <noram
 		!byte <noram
 ; screendata addresses hi
@@ -2041,7 +2066,7 @@ scrdata_hi:	!byte >title, >ramsegf, >romssegf, >iclow1, >iclow2, >iclow3, >line,
 		!byte >chkrbrd, >aa55, >marchinc, >decadra5, >dec5a, >incadr, >decadr00, >segment
 		!byte >segment, >segment, >segment, >segment, >segment, >segment, >segment, >segment
 		!byte >segment, >segment, >segment, >execute, >execute, >execute, >execute, >test
-		!byte >test, >test, >test, >ics, >staticram, >tmr, >bpchksum, >high
+		!byte >test, >test, >test, >ics, >staticram, >tmr, >bProgramChecksum, >high
 		!byte >ichigh1, >ichigh2, >ichigh3, >tod, >tnt, >todtests, >timertsts, >noram
 		!byte >noram
 ; screen RAM addresses lo
