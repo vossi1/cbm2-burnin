@@ -18,17 +18,17 @@ PC			= $2 *2		; port c
 MIR			= $5 *2		; interrupt mask register
 CR			= $6 *2		; control register
 ; CIA register
-talo			= $4 *2		; timer a lo
-tahi			= $5 *2		; timer a hi
-tblo			= $6 *2		; timer b lo
-tbhi			= $7 *2		; timer b hi
-tod10			= $8 *2		; tod 10th of seconds
-todsec			= $9 *2		; tod seconds
-todmin			= $a *2		; tod monutes
-todhr			= $b *2		; tod hours
-icr			= $d *2		; interrupt control register
-cra			= $e *2		; control register b
-crb			= $f *2		; control register b
+TALO			= $4 *2		; timer a lo
+TAHI			= $5 *2		; timer a hi
+TBLO			= $6 *2		; timer b lo
+TBHI			= $7 *2		; timer b hi
+TOD10			= $8 *2		; tod 10th of seconds
+TODSEC			= $9 *2		; tod seconds
+TODMIN			= $a *2		; tod monutes
+TODHR			= $b *2		; tod hours
+ICR			= $d *2		; interrupt control register
+CRA			= $e *2		; control register b
+CRB			= $f *2		; control register b
 ; SID register
 OSC1			= $00 *2	; oscillator 1
 OSC3			= $0e *2	; oscillator 2
@@ -577,9 +577,9 @@ timtest:sei
 	jsr eciairq
 	ldy #$00
 	lda #$00
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	lda #$08
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	sty $16
 	ldx #$01
 	jsr l2527
@@ -590,7 +590,7 @@ l239a:	jsr l2549
 	dec $16
 l23a1:	ldx #$01
 	lda #$00
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	jsr l2527
 	beq l23ae
 	dec $16
@@ -598,139 +598,139 @@ l23ae:	ldx #$01
 	jsr l2549
 	beq l23b7
 	dec $16
-l23b7:	lda (cia+cra),y
+l23b7:	lda (cia+CRA),y
 	and #$fe
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	lda #$08
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	ldx #$02
 	jsr l2538
 	beq l23ca
 	dec $16
-l23ca:	lda (cia+crb),y
+l23ca:	lda (cia+CRB),y
 	and #$fe
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	lda #$40
 	sta temp_dec_value
 l23d4:	lda #$00
-	sta (cia+cra),y
-	sta (cia+crb),y
+	sta (cia+CRA),y
+	sta (cia+CRB),y
 	lda #$55
-	sta (cia+talo),y
-	sta (cia+tahi),y
-	lda (cia+talo),y
+	sta (cia+TALO),y
+	sta (cia+TAHI),y
+	lda (cia+TALO),y
 	cmp #$55
 	beq l23e8
 	dec $16
-l23e8:	lda (cia+tahi),y
+l23e8:	lda (cia+TAHI),y
 	cmp #$55
 	beq l23f0
 	dec $16
 l23f0:	lda #$aa
-	sta (cia+tahi),y
-	sta (cia+talo),y
-	lda (cia+talo),y
+	sta (cia+TAHI),y
+	sta (cia+TALO),y
+	lda (cia+TALO),y
 	cmp #$55
 	beq l23fe
 	dec $16
-l23fe:	lda (cia+tahi),y
+l23fe:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2408
 	lda #$ff
 	sta $16
 l2408:	lda #$10
-	sta (cia+cra),y
-	lda (cia+talo),y
+	sta (cia+CRA),y
+	lda (cia+TALO),y
 	cmp #$aa
 	beq l2414
 	dec $16
-l2414:	lda (cia+tahi),y
+l2414:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l241c
 	dec $16
 l241c:	lda #$55
-	sta (cia+tblo),y
-l2420:	sta (cia+tbhi),y
-	lda (cia+tblo),y
+	sta (cia+TBLO),y
+l2420:	sta (cia+TBHI),y
+	lda (cia+TBLO),y
 	cmp #$55
 	beq l242a
 	dec $16
-l242a:	lda (cia+tbhi),y
+l242a:	lda (cia+TBHI),y
 	cmp #$55
 	beq l2432
 	dec $16
 l2432:	lda #$aa
-	sta (cia+tbhi),y
-	sta (cia+tblo),y
-	lda (cia+tblo),y
+	sta (cia+TBHI),y
+	sta (cia+TBLO),y
+	lda (cia+TBLO),y
 	cmp #$55
 	beq l2440
 	dec $16
-l2440:	lda (cia+tbhi),y
+l2440:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l2448
 	dec $16
 l2448:	lda #$10
-	sta (cia+crb),y
-	lda (cia+tblo),y
+	sta (cia+CRB),y
+	lda (cia+TBLO),y
 	cmp #$aa
 	beq l2454
 	dec $16
-l2454:	lda (cia+tbhi),y
+l2454:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l245c
 	dec $16
 l245c:	lda #$09
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	lda #$cc
-	sta (cia+talo),y
-	sta (cia+tahi),y
-	lda (cia+talo),y
+	sta (cia+TALO),y
+	sta (cia+TAHI),y
+	lda (cia+TALO),y
 	cmp #$aa
 	bmi l246e
 	dec $16
-l246e:	lda (cia+tahi),y
+l246e:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2476
 	dec $16
 l2476:	lda #$19
 	ldx #$00
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	txa
-	sta (cia+cra),y
-	lda (cia+talo),y
+	sta (cia+CRA),y
+	lda (cia+TALO),y
 	and #$fe
 	cmp #$c4
 	beq l2489
 	dec $16
-l2489:	lda (cia+tahi),y
+l2489:	lda (cia+TAHI),y
 	cmp #$cc
 	beq l2491
 	dec $16
 l2491:	lda #$09
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	lda #$cc
-	sta (cia+tblo),y
-	sta (cia+tbhi),y
-	lda (cia+tblo),y
+	sta (cia+TBLO),y
+	sta (cia+TBHI),y
+	lda (cia+TBLO),y
 	cmp #$aa
 	bmi l24a3
 	dec $16
-l24a3:	lda (cia+tbhi),y
+l24a3:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l24ab
 	dec $16
 l24ab:	lda #$19
 	ldx #$00
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	txa
-	sta (cia+crb),y
-	lda (cia+tblo),y
+	sta (cia+CRB),y
+	lda (cia+TBLO),y
 	and #$fe
 	cmp #$c4
 	beq l24be
 	dec $16
-l24be:	lda (cia+tbhi),y
+l24be:	lda (cia+TBHI),y
 	cmp #$cc
 	beq l24c6
 	dec $16
@@ -738,33 +738,33 @@ l24c6:	dec temp_dec_value
 	bmi l24cd
 	jmp l23d4
 l24cd:	lda #$00
-	sta (cia+tahi),y
-	sta (cia+tbhi),y
+	sta (cia+TAHI),y
+	sta (cia+TBHI),y
 	lda #$01
-	sta (cia+tblo),y
+	sta (cia+TBLO),y
 	lda #$08
-	sta (cia+talo),y
+	sta (cia+TALO),y
 	lda #$51
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	lda #$19
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	tax
 l24e4:	dex
 	bne l24e4
 	txa
-	sta (cia+cra),y
-	sta (cia+crb),y
-	lda (cia+tbhi),y
+	sta (cia+CRA),y
+	sta (cia+CRB),y
+	lda (cia+TBHI),y
 	beq l24f2
 	dec $16
-l24f2:	lda (cia+tblo),y
+l24f2:	lda (cia+TBLO),y
 	beq l24f8
 	dec $16
-l24f8:	lda (cia+tahi),y
+l24f8:	lda (cia+TAHI),y
 	cmp #$00
 	beq l2500
 	dec $16
-l2500:	lda (cia+talo),y
+l2500:	lda (cia+TALO),y
 	cmp #$08
 	beq l2508
 	dec $16
@@ -788,28 +788,28 @@ tmrend:	rts
 ; ----------------------------------------------------------------------------
 ; 
 l2527:	lda #$88
-	sta (cia+talo),y
-	sta (cia+tahi),y
-	lda (cia+cra),y
+	sta (cia+TALO),y
+	sta (cia+TAHI),y
+	lda (cia+CRA),y
 	ora #$01
-	sta (cia+cra),y
+	sta (cia+CRA),y
 	jsr l257e
 	bne l2549
 l2538:	lda #$88
-	sta (cia+tblo),y
-	sta (cia+tbhi),y
-	lda (cia+crb),y
+	sta (cia+TBLO),y
+	sta (cia+TBHI),y
+	lda (cia+CRB),y
 	ora #$01
-	sta (cia+crb),y
+	sta (cia+CRB),y
 	jsr l257e
 	bne l2549
 l2549:	jsr cciairq
 	txa
 	sta screen_pos
-	sta (cia+icr),y
+	sta (cia+ICR),y
 	ldx #$00
 	stx $3b
-l2555:	lda (cia+icr),y
+l2555:	lda (cia+ICR),y
 	bne l2567
 	inx
 	bne l2555
@@ -844,10 +844,10 @@ l2581:	sbc #$01
 ; enable all CIA interrupts
 eciairq:ldy #$00
 	lda #$7f			; clear all irq mask bits
-	sta (cia+icr),y
+	sta (cia+ICR),y
 ; clear CIA inerrupt reg
 cciairq:ldy #$00
-	lda (cia+icr),y			; clear irq reg
+	lda (cia+ICR),y			; clear irq reg
 	rts
 	rti				; unused
 ; ----------------------------------------------------------------------------
@@ -886,7 +886,7 @@ chkslp: lda time2_seconds
 	sta time1_seconds
 	jsr todchk1
 	lda tod_state
-	bne todfai1			; branch -> TOD failure
+	bne todfai1
 	lda time2_minutes
 	beq chkslp			; check all seconds
 	jsr playsnd
@@ -923,24 +923,24 @@ chkh12:	cmp #$12
 	lda tod_state			; load state
 todfai1:bne todfail			; branch -> TOD failure
 ; TOD alarm test
-	lda (cia+icr),y			; clear cia irq reg
+	lda (cia+ICR),y			; clear cia irq reg
 	lda #$7f
-	sta (cia+icr),y			; clear all irq mask bits
+	sta (cia+ICR),y			; clear all irq mask bits
 	lda #$80
-	sta (cia+crb),y			; set bit #7 - TOD ALARM
+	sta (cia+CRB),y			; set bit #7 - TOD ALARM
 	lda time2_hours
-	sta (cia+todhr),y		; set ALARM
+	sta (cia+TODHR),y		; set ALARM
 	lda time2_minutes
-	sta (cia+todmin),y
+	sta (cia+TODMIN),y
 	lda time2_seconds
-	sta (cia+todsec),y
+	sta (cia+TODSEC),y
 	lda time2_10th
 	clc
 	adc #$01
-	sta (cia+tod10),y		; set ALARM to time2 + one 10th
+	sta (cia+TOD10),y		; set ALARM to time2 + one 10th
 	sty tod_count1			; clear counter
 	sty tod_count2
-alarmlp:lda (cia+icr),y
+alarmlp:lda (cia+ICR),y
 	bne chkalar			; irq -> test for ALARM irq bit #2
 	dec tod_count1
 	bne alarmlp			; wait for ALARM
@@ -974,15 +974,15 @@ todchk1:sed				; decimal mode
 	sty tod_count3
 	lda time1_hours
 	sta time2_hours
-	sta (cia+todhr),y		; set TOD starting with hours (halts TOD) to time1
+	sta (cia+TODHR),y		; set TOD starting with hours (halts TOD) to time1
 	lda time1_minutes
 	sta time2_minutes
-	sta (cia+todmin),y
+	sta (cia+TODMIN),y
 	lda time1_seconds
 	sta time2_seconds
-	sta (cia+todsec),y
+	sta (cia+TODSEC),y
 	lda time1_10th
-	sta (cia+tod10),y		; set TOD 10th (starts TOD)
+	sta (cia+TOD10),y		; set TOD 10th (starts TOD)
 	clc
 	adc #$01
 	sta time2_10th			; set time2 = time1 + one 10th
@@ -1024,9 +1024,9 @@ togglpm:lda #$80
 	eor time2_hours			; toogle pm flag
 	sta time2_hours
 ; count time for change of TOD to time1 init value
-chktod:	lda (cia+tod10),y
+chktod:	lda (cia+TOD10),y
 	cmp time1_10th
-	bne todchg			; TOD time has changed
+	bne todchg
 	dec tod_count1			; dec counter if no change
 	bne chktod
 	dec tod_count2
@@ -1037,13 +1037,13 @@ chktod:	lda (cia+tod10),y
 ; compare new time to time2
 todchg:	cmp time2_10th			; compare if TOD is now = time2
 	bne todbad			; if not -> failure
-	lda (cia+todsec),y
+	lda (cia+TODSEC),y
 	cmp time2_seconds
-	bne todbad
-	lda (cia+todmin),y
+	bne todbad			; ********** CMOS ERROR: TOD seconds still 1, but time2_seconds=2 **********
+	lda (cia+TODMIN),y
 	cmp time2_minutes
 	bne todbad
-	lda (cia+todhr),y
+	lda (cia+TODHR),y
 	cmp time2_hours
 	beq todok
 todbad:	lda #$ff			; state = TOD bad
