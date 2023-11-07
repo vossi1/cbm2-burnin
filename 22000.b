@@ -382,11 +382,11 @@ loadbyt:lda cycles,x			; load byte
 	and #$f0			; isloate high nible (decimal!)
 	beq prdiglo			; skip high nible printing if zero
 ; print digits
-prdighi:jsr ScreencodeHighNibble	; calc screen code for high nibble
+prdighi:jsr UpperNibble2Screencode	; calc screen code for high nibble
 	sta (pointer1),y		; print low nible digit to screen position
 	iny
 prdiglo:lda cycles,x			; load digit
-	jsr ScreencodeLowNibble		; calc screen code for low nibble
+	jsr Nibble2Screencode		; calc screen code for low nibble
 	sta (pointer1),y		; print digit to screen position
 	iny
 	inx
@@ -474,7 +474,7 @@ cksumlp:lda (pointer1),y		; load code byte
 	jsr DrawTextReverse		; draw bad program checksum reverse
 ; print checksum
 prntsum:lda temp2			; checksum
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	ldx #$2e
@@ -558,7 +558,7 @@ rsumlp:	clc
 	adc #$00			; add carry of screen pos lo
 	sta pointer3+1
 	lda temp_count_sum
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	sta (pointer3),y		; print to screen
@@ -1498,7 +1498,7 @@ l2a59:	clv
 	sta $27
 	stx $28
 	sty $29
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	ldx IndirectBank
 	stx actual_indirbank
 	cpx #SYSTEMBANK
@@ -1518,12 +1518,12 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda actual_indirbank
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	tya
 	ldy #$03
 	sta (pointer3),y
 	lda pointer1+1
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	sty temp2
 	ldy #$05
 	sta (pointer3),y
@@ -1531,7 +1531,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda $29
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	sty temp2
 	ldy #$07
 	sta (pointer3),y
@@ -1539,7 +1539,7 @@ l2a71:	stx IndirectBank
 	lda temp2
 	sta (pointer3),y
 	lda CodeBank
-	jsr ScreencodesByte			; calc screen code for a byte
+	jsr Hex2Screencode			; calc screen code for a byte
 	tya
 	ldy #$0b
 	sta (pointer3),y
@@ -1752,27 +1752,27 @@ l2c1f:	sta $2b
 	rts
 ; ----------------------------------------------------------------------------
 ; calc screen codes for a byte and return in a and y
-ScreencodesByte:
-	pha				; save value in a
-	jsr ScreencodeLowNibble		; calc low nibble hex
-	tay				; store low in y
+Hex2Screencode:
+	pha				; remember value on stack
+	jsr Nibble2Screencode		; calc low nibble
+	tay				; remember lower digit in Y
 	pla
 ; calc screen code for high nibble
-ScreencodeHighNibble:
-	lsr				; shift high nibble to low
+UpperNibble2Screencode:
+	lsr				; upper nibble -> lower nibble
 	lsr
 	lsr
 	lsr
 ; calc screen code dec / hex
-ScreencodeLowNibble:
+Nibble2Screencode:
 	and #$0f			; isolate low nibble
 	cmp #$0a
-	bmi scdcalc			; branch for 0-9
+	bmi scdec			; skip if 0-9
 	sec
-	sbc #$09			; calc a-f -> 01-06
-	bne scdend			; jump always
-scdcalc:ora #$30			; calculate screen code 0-9 -> 30-39
-scdend:	rts
+	sbc #$09			; calc screencode A-F -> 01-06
+	bne scend			; jump always
+scdec:	ora #$30			; calc screencode 0-9 -> 30-39
+scend:	rts
 ; ----------------------------------------------------------------------------
 ; 
 calc2:	jsr mul5
@@ -1887,10 +1887,10 @@ CopyPointer:
 	stx pointer3+1
 	lda CodeBank
 	sta IndirectBank
--	lda (pointer3),y
+cpptlp:	lda (pointer3),y
 	sta (pointer1),y
 	dey
-	bpl -
+	bpl cpptlp
 	rts
 ; ----------------------------------------------------------------------------
 ; draw reverse
