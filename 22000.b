@@ -845,7 +845,7 @@ l2581:	sbc #$01
 eciairq:ldy #$00
 	lda #$7f			; clear all irq mask bits
 	sta (cia+ICR),y
-; clear CIA inerrupt reg
+; clear CIA interrupt reg
 cciairq:ldy #$00
 	lda (cia+ICR),y			; clear irq reg
 	rts
