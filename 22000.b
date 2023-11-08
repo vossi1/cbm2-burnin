@@ -42,6 +42,9 @@ VOLUME			= $18 *2	; volume
 !addr IndirectBank	= $01		; indirect bank register
 !addr ScreenRAM		= $d000		; Screen RAM
 !addr CRT		= $d800		; CRT
+!addr HW_NMI		= $fffa		; system NMI vector
+!addr HW_RESET		= $fffc		; system RESET vector
+!addr HW_IRQ		= $fffe		; system IRQ vector
 ; ***************************************** ZERO PAGE *********************************************
 !addr pointer1		= $12		; 16bit pointer
 !addr tod_count1	= $12		; tod test counter
@@ -87,6 +90,9 @@ VOLUME			= $18 *2	; volume
 !addr tpi2		= $6f		; 8 pointer to TPI2 regs
 !addr cia		= $7f		; 16 pointer to CIA regs
 !addr acia		= $a3		; 4 pointer to ACIA regs
+!addr nmi_pointer	= $f0		; nmi pointer
+!addr reset_pointer	= $f2		; reset pointer
+!addr irq_pointer	= $f4		; irq pointer
 ; ******************************************* CODE ************************************************
 *= CODESTART
 	sei
@@ -476,7 +482,7 @@ cksumlp:lda (pointer1),y		; load code byte
 	jsr DrawTextReverse		; draw bad program checksum reverse
 ; print checksum
 prntsum:lda temp2			; checksum
-	jsr Hex2Screencode			; calc screen code for a byte
+	jsr Hex2Screencode		; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	ldx #$2e
@@ -560,7 +566,7 @@ rsumlp:	clc
 	adc #$00			; add carry of screen pos lo
 	sta pointer3+1
 	lda temp_count_sum
-	jsr Hex2Screencode			; calc screen code for a byte
+	jsr Hex2Screencode		; calc screen code for a byte
 	sty temp2
 	ldy #$00
 	sta (pointer3),y		; print to screen
@@ -580,45 +586,45 @@ rsumlp:	clc
 ; timer tests
 TimerTest:
 	sei
-	ldx #$36
+	ldx #$36			; "6526 TIMER TESTS"
 	jsr DrawText			; sub: draw screen text
-	jsr l2cb9
+	jsr InitSystemVectors		; sub: init system hardware vectors
 	jsr InitCIAPointer		; sub: init cia pointer
 	lda #SYSTEMBANK
 	sta IndirectBank
 	jsr eciairq
 	ldy #$00
 	lda #$00
-	sta (cia+CRB),y
+	sta (cia+CRB),y			; disable timer B
 	lda #$08
-	sta (cia+CRA),y
-	sty timer_state
-	ldx #$01
-	jsr l2527
-	beq l239a
-	dec timer_state
-l239a:	jsr l2549
-	bne l23a1
-	dec timer_state
-l23a1:	ldx #$01
+	sta (cia+CRA),y			; timer A one-shot
+	sty timer_state			; clear fault counter
+	ldx #$01			; irq-bit timer A
+	jsr CheckIRQTimerA		; check timer A IRQ
+	beq tok1
+	dec timer_state			; dec fault counter
+tok1:	jsr CheckIRQ
+	bne tok2
+	dec timer_state			; dec fault counter
+tok2:	ldx #$01
 	lda #$00
-	sta (cia+CRA),y
-	jsr l2527
-	beq l23ae
-	dec timer_state
-l23ae:	ldx #$01
-	jsr l2549
+	sta (cia+CRA),y			; disable timer A
+	jsr CheckIRQTimerA		; check timer a no IRQ
+	beq tok3
+	dec timer_state			; dec fault counter
+tok3:	ldx #$01
+	jsr CheckIRQ
 	beq l23b7
-	dec timer_state
+	dec timer_state			; dec fault counter
 l23b7:	lda (cia+CRA),y
 	and #$fe
 	sta (cia+CRA),y
 	lda #$08
 	sta (cia+CRB),y
 	ldx #$02
-	jsr l2538
+	jsr CheckIRQTimerB
 	beq l23ca
-	dec timer_state
+	dec timer_state			; dec fault counter
 l23ca:	lda (cia+CRB),y
 	and #$fe
 	sta (cia+CRB),y
@@ -633,65 +639,65 @@ l23d4:	lda #$00
 	lda (cia+TALO),y
 	cmp #$55
 	beq l23e8
-	dec timer_state
+	dec timer_state			; dec fault counter
 l23e8:	lda (cia+TAHI),y
 	cmp #$55
 	beq l23f0
-	dec timer_state
+	dec timer_state			; dec fault counter
 l23f0:	lda #$aa
 	sta (cia+TAHI),y
 	sta (cia+TALO),y
 	lda (cia+TALO),y
 	cmp #$55
 	beq l23fe
-	dec timer_state
+	dec timer_state			; dec fault counter
 l23fe:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2408
 	lda #$ff
-	sta timer_state
+	sta timer_state			; dec fault counter
 l2408:	lda #$10
 	sta (cia+CRA),y
 	lda (cia+TALO),y
 	cmp #$aa
 	beq l2414
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2414:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l241c
-	dec timer_state
+	dec timer_state			; dec fault counter
 l241c:	lda #$55
 	sta (cia+TBLO),y
 l2420:	sta (cia+TBHI),y
 	lda (cia+TBLO),y
 	cmp #$55
 	beq l242a
-	dec timer_state
+	dec timer_state			; dec fault counter
 l242a:	lda (cia+TBHI),y
 	cmp #$55
 	beq l2432
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2432:	lda #$aa
 	sta (cia+TBHI),y
 	sta (cia+TBLO),y
 	lda (cia+TBLO),y
 	cmp #$55
 	beq l2440
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2440:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l2448
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2448:	lda #$10
 	sta (cia+CRB),y
 	lda (cia+TBLO),y
 	cmp #$aa
 	beq l2454
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2454:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l245c
-	dec timer_state
+	dec timer_state			; dec fault counter
 l245c:	lda #$09
 	sta (cia+CRA),y
 	lda #$cc
@@ -700,11 +706,11 @@ l245c:	lda #$09
 	lda (cia+TALO),y
 	cmp #$aa
 	bmi l246e
-	dec timer_state
+	dec timer_state			; dec fault counter
 l246e:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2476
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2476:	lda #$19
 	ldx #$00
 	sta (cia+CRA),y
@@ -714,11 +720,11 @@ l2476:	lda #$19
 	and #$fe
 	cmp #$c4
 	beq l2489
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2489:	lda (cia+TAHI),y
 	cmp #$cc
 	beq l2491
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2491:	lda #$09
 	sta (cia+CRB),y
 	lda #$cc
@@ -727,11 +733,11 @@ l2491:	lda #$09
 	lda (cia+TBLO),y
 	cmp #$aa
 	bmi l24a3
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24a3:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l24ab
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24ab:	lda #$19
 	ldx #$00
 	sta (cia+CRB),y
@@ -741,11 +747,11 @@ l24ab:	lda #$19
 	and #$fe
 	cmp #$c4
 	beq l24be
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24be:	lda (cia+TBHI),y
 	cmp #$cc
 	beq l24c6
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24c6:	dec temp_dec_value
 	bmi l24cd
 	jmp l23d4
@@ -768,19 +774,19 @@ l24e4:	dex
 	sta (cia+CRB),y
 	lda (cia+TBHI),y
 	beq l24f2
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24f2:	lda (cia+TBLO),y
 	beq l24f8
-	dec timer_state
+	dec timer_state			; dec fault counter
 l24f8:	lda (cia+TAHI),y
 	cmp #$00
 	beq l2500
-	dec timer_state
+	dec timer_state			; dec fault counter
 l2500:	lda (cia+TALO),y
 	cmp #$08
 	beq l2508
-	dec timer_state
-l2508:	lda timer_state
+	dec timer_state			; dec fault counter
+l2508:	lda timer_state			; dec fault counter
 	beq tmrend
 ; timer fails
 	lda #$ff
@@ -798,59 +804,65 @@ l2508:	lda timer_state
 drawtmr:jsr DrawText			; sub: draw screen text
 tmrend:	rts
 ; ----------------------------------------------------------------------------
-; 
-l2527:	lda #$88
+; check time A IRQ
+CheckIRQTimerA:
+	lda #$88			; set timer A to $8888
 	sta (cia+TALO),y
 	sta (cia+TAHI),y
 	lda (cia+CRA),y
 	ora #$01
-	sta (cia+CRA),y
-	jsr l257e
-	bne l2549
-l2538:	lda #$88
+	sta (cia+CRA),y			; start timer A
+	jsr Delay
+	bne CheckIRQ			; jump always
+; check timer B IRQ
+CheckIRQTimerB:
+	lda #$88			; set timer B to $8888
 	sta (cia+TBLO),y
 	sta (cia+TBHI),y
 	lda (cia+CRB),y
 	ora #$01
 	sta (cia+CRB),y
-	jsr l257e
-	bne l2549
-l2549:	jsr cciairq
+	jsr Delay
+	bne CheckIRQ			; jump always
+CheckIRQ:
+	jsr cciairq			; clear IRQ reg
 	txa
-	sta temp_irq
-	sta (cia+ICR),y
-	ldx #$00
-	stx temp3
-l2555:	lda (cia+ICR),y
-	bne l2567
+	sta temp_irq			; remember irq bit from x for timer
+	sta (cia+ICR),y			; clear mask bit for timer IRQ
+	ldx #$00			; reset counter for waiting for IRQ
+	stx temp3			; reset hi counter for waiting
+irqlp:	lda (cia+ICR),y			; load IRQ reg
+	bne CheckTimerIRQok
 	inx
-	bne l2555
+	bne irqlp			; wait for IRQ
 	inc temp3
 	lda #$0f
 	cmp temp3
-	bpl l2555
+	bpl irqlp			; wait for IRQ
 	ldx temp3
-	rts
+	rts				; returns X=$0a if no IRQ occured
 ; ----------------------------------------------------------------------------
-; 
-l2567:	and temp_irq
-	cmp temp_irq
-	beq l256f
-	dec timer_state
-l256f:	cpx #$db
-	beq l2575
-	dec timer_state
-l2575:	ldx temp3
+; check if correct IRQ + time
+CheckTimerIRQok:
+	and temp_irq			; isolate timer IRQ bit
+	cmp temp_irq			; check if timer IRQ bit set?
+	beq irqok			; skip if IRQ ok
+	dec timer_state			; dec fault counter
+irqok:	cpx #$db			; compare time
+	beq timelok			; skip if IRQ ok
+	dec timer_state			; dec fault counter
+timelok:ldx temp3
 	cpx #$0a
-	beq l257d
-	dec timer_state
-l257d:	rts
+	beq timehok
+	dec timer_state			; dec fault counter
+timehok:rts
 ; ----------------------------------------------------------------------------
-; 
-l257e:	lda #$05
+; Delay
+Delay:
+	lda #$05
 	clc
-l2581:	sbc #$01
-	bpl l2581
+-	sbc #$01
+	bpl -
 	rts
 ; ----------------------------------------------------------------------------
 ; enable all CIA interrupts
@@ -861,8 +873,10 @@ eciairq:ldy #$00
 cciairq:ldy #$00
 	lda (cia+ICR),y			; clear irq reg
 	rts
-	rti				; unused
 ; ----------------------------------------------------------------------------
+; interrupt handler
+InterruptHandler:
+	rti				; return from interrupt
 ; TOD tests
 TODTest:
 	sei				; disable interrupts (ALARM test checks reg)
@@ -1860,27 +1874,28 @@ InitSIDPointer:
 	jsr CopyPointer			; sub: copy pointer addresses
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2cb9:	lda #$f0
-	sta $fffa
+; init system vectors for timer test
+InitSystemVectors:
+	lda #nmi_pointer
+	sta HW_NMI
 	lda #$00
-	sta $fffb
-	lda #$f2
-	sta $fffc
+	sta HW_NMI+1
+	lda #reset_pointer
+	sta HW_RESET
 	lda #$00
-	sta $fffd
-	lda #$f4
-	sta $fffe
+	sta HW_RESET+1
+	lda #irq_pointer
+	sta HW_IRQ
 	lda #$00
-	sta $ffff
-	lda #$91
-	sta $f0
-	sta $f2
-	sta $f4
-	lda #$25
-	sta $f1
-	sta $f3
-	sta $f5
+	sta HW_IRQ+1
+	lda #<InterruptHandler
+	sta nmi_pointer
+	sta reset_pointer
+	sta irq_pointer
+	lda #>InterruptHandler
+	sta nmi_pointer+1
+	sta reset_pointer+1
+	sta irq_pointer+1
 	rts
 ; ----------------------------------------------------------------------------
 ; copy data y+1 bytes from ax to pointer1
