@@ -59,6 +59,7 @@ VOLUME			= $18 *2	; volume
 !addr banks		= $2f		; RAM banks
 !addr pointer2		= $35		; 16bit pointer
 !addr screen_pos	= $39		; add value screen position rom checksum
+!addr temp_irq		= $39		; temp irq timer tests
 !addr time2_hours	= $42		; time 1 hours
 !addr time2_minutes	= $43		; time 1 minutes
 !addr time2_seconds	= $44		; time 1 seconds
@@ -815,7 +816,7 @@ l2538:	lda #$88
 	bne l2549
 l2549:	jsr cciairq
 	txa
-	sta screen_pos
+	sta temp_irq
 	sta (cia+ICR),y
 	ldx #$00
 	stx $3b
@@ -831,8 +832,8 @@ l2555:	lda (cia+ICR),y
 	rts
 ; ----------------------------------------------------------------------------
 ; 
-l2567:	and screen_pos
-	cmp screen_pos
+l2567:	and temp_irq
+	cmp temp_irq
 	beq l256f
 	dec $16
 l256f:	cpx #$db
@@ -866,7 +867,7 @@ TODTest:
 	sei				; disable interrupts (ALARM test checks reg)
 	ldx #$35			; "6526 TOD TESTS"
 	jsr DrawText			; sub: draw screen text
-	jsr InitCIAPointer			; sub: init cia pointer
+	jsr InitCIAPointer		; sub: init cia pointer
 	jsr eciairq			; enable cia irq's
 	ldy #$00
 	sty tod_state			; init TOD state to 0 = ok
@@ -2027,7 +2028,7 @@ incadr:		!scr "INC ADR $FF "
 decadr00:	!scr "DEC ADR $00 "
 staticram:	!scr "STATIC RAM TESTS  "
 todtests:	!scr "6526 TOD TESTS    "
-timertsts:	!scr "6526 TIMERS TESTS "
+timertests:	!scr "6526 TIMERS TESTS "
 tmr:		!scr "TMR"
 tod:		!scr "TOD"
 tnt:		!scr "TNT"
@@ -2058,7 +2059,7 @@ scrdata_lo:	!byte <title, <ramsegf, <romssegf, <iclow1, <iclow2, <iclow3, <line,
 		!byte <segment, <segment, <segment, <segment, <segment, <segment, <segment, <segment
 		!byte <segment, <segment, <segment, <execute, <execute, <execute, <execute, <test
 		!byte <test, <test, <test, <ics, <staticram, <tmr, <bProgramChecksum, <high
-		!byte <ichigh1, <ichigh2, <ichigh3, <tod, <tnt, <todtests, <timertsts, <noram
+		!byte <ichigh1, <ichigh2, <ichigh3, <tod, <tnt, <todtests, <timertests, <noram
 		!byte <noram
 ; screendata addresses hi
 scrdata_hi:	!byte >title, >ramsegf, >romssegf, >iclow1, >iclow2, >iclow3, >line, >line
@@ -2067,7 +2068,7 @@ scrdata_hi:	!byte >title, >ramsegf, >romssegf, >iclow1, >iclow2, >iclow3, >line,
 		!byte >segment, >segment, >segment, >segment, >segment, >segment, >segment, >segment
 		!byte >segment, >segment, >segment, >execute, >execute, >execute, >execute, >test
 		!byte >test, >test, >test, >ics, >staticram, >tmr, >bProgramChecksum, >high
-		!byte >ichigh1, >ichigh2, >ichigh3, >tod, >tnt, >todtests, >timertsts, >noram
+		!byte >ichigh1, >ichigh2, >ichigh3, >tod, >tnt, >todtests, >timertests, >noram
 		!byte >noram
 ; screen RAM addresses lo
 screen_lo:	!byte $00, $00, $11, $90, $c0, $f0, $a2, $ca
