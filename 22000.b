@@ -47,12 +47,12 @@ VOLUME			= $18 *2	; volume
 !addr tod_count1	= $12		; tod test counter
 !addr tod_count2	= $13		; tod test counter
 !addr screen_pointer	= $14		; 16bit pointer screen
-!addr tod_state		= $16		; TOD state - $ff = bad
-;			= $16
+!addr tod_state		= $16		; TOD state - $00=ok, $ff = bad
+!addr timer_state	= $16		; timer state - $00 = ok
 !addr cia_tod_fail	= $1b		; 0 = TOD ok, $ff = tod failed
 !addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
-!addr temp_ProgramChecksum1	= $1d		; temp test program checksum
-!addr temp_ProgramChecksum2	= $1e		; temp test program checksum
+!addr temp_checksum1	= $1d		; temp test program checksum
+!addr temp_checksum2	= $1e		; temp test program checksum
 !addr actual_codebank	= $20		; actual code bank
 !addr cycles		= $21		; 4 bytes cycle counter
 !addr temp_and_value	= $2a		; temp screen data and value
@@ -60,6 +60,7 @@ VOLUME			= $18 *2	; volume
 !addr pointer2		= $35		; 16bit pointer
 !addr screen_pos	= $39		; add value screen position rom checksum
 !addr temp_irq		= $39		; temp irq timer tests
+!addr temp3		= $3b		; temp timer tests
 !addr time2_hours	= $42		; time 1 hours
 !addr time2_minutes	= $43		; time 1 minutes
 !addr time2_seconds	= $44		; time 1 seconds
@@ -463,13 +464,13 @@ cksumlp:lda (pointer1),y		; load code byte
 	dex
 	bpl cksumlp			; next page
 ; check if zeropage with checksum is ok
-	lda temp_ProgramChecksum1
+	lda temp_checksum1
 	bne +				; not zero from clear zp -> faulty
-	dec temp_ProgramChecksum1
+	dec temp_checksum1
 	lda temp2			; checksum
-	sta temp_ProgramChecksum2
+	sta temp_checksum2
 +	lda temp2
-	cmp temp_ProgramChecksum2
+	cmp temp_checksum2
 	beq prntsum			; zeropage ok -> print checksum
 	ldx #$2e		
 	jsr DrawTextReverse		; draw bad program checksum reverse
@@ -591,24 +592,24 @@ TimerTest:
 	sta (cia+CRB),y
 	lda #$08
 	sta (cia+CRA),y
-	sty $16
+	sty timer_state
 	ldx #$01
 	jsr l2527
 	beq l239a
-	dec $16
+	dec timer_state
 l239a:	jsr l2549
 	bne l23a1
-	dec $16
+	dec timer_state
 l23a1:	ldx #$01
 	lda #$00
 	sta (cia+CRA),y
 	jsr l2527
 	beq l23ae
-	dec $16
+	dec timer_state
 l23ae:	ldx #$01
 	jsr l2549
 	beq l23b7
-	dec $16
+	dec timer_state
 l23b7:	lda (cia+CRA),y
 	and #$fe
 	sta (cia+CRA),y
@@ -617,7 +618,7 @@ l23b7:	lda (cia+CRA),y
 	ldx #$02
 	jsr l2538
 	beq l23ca
-	dec $16
+	dec timer_state
 l23ca:	lda (cia+CRB),y
 	and #$fe
 	sta (cia+CRB),y
@@ -632,65 +633,65 @@ l23d4:	lda #$00
 	lda (cia+TALO),y
 	cmp #$55
 	beq l23e8
-	dec $16
+	dec timer_state
 l23e8:	lda (cia+TAHI),y
 	cmp #$55
 	beq l23f0
-	dec $16
+	dec timer_state
 l23f0:	lda #$aa
 	sta (cia+TAHI),y
 	sta (cia+TALO),y
 	lda (cia+TALO),y
 	cmp #$55
 	beq l23fe
-	dec $16
+	dec timer_state
 l23fe:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2408
 	lda #$ff
-	sta $16
+	sta timer_state
 l2408:	lda #$10
 	sta (cia+CRA),y
 	lda (cia+TALO),y
 	cmp #$aa
 	beq l2414
-	dec $16
+	dec timer_state
 l2414:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l241c
-	dec $16
+	dec timer_state
 l241c:	lda #$55
 	sta (cia+TBLO),y
 l2420:	sta (cia+TBHI),y
 	lda (cia+TBLO),y
 	cmp #$55
 	beq l242a
-	dec $16
+	dec timer_state
 l242a:	lda (cia+TBHI),y
 	cmp #$55
 	beq l2432
-	dec $16
+	dec timer_state
 l2432:	lda #$aa
 	sta (cia+TBHI),y
 	sta (cia+TBLO),y
 	lda (cia+TBLO),y
 	cmp #$55
 	beq l2440
-	dec $16
+	dec timer_state
 l2440:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l2448
-	dec $16
+	dec timer_state
 l2448:	lda #$10
 	sta (cia+CRB),y
 	lda (cia+TBLO),y
 	cmp #$aa
 	beq l2454
-	dec $16
+	dec timer_state
 l2454:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l245c
-	dec $16
+	dec timer_state
 l245c:	lda #$09
 	sta (cia+CRA),y
 	lda #$cc
@@ -699,11 +700,11 @@ l245c:	lda #$09
 	lda (cia+TALO),y
 	cmp #$aa
 	bmi l246e
-	dec $16
+	dec timer_state
 l246e:	lda (cia+TAHI),y
 	cmp #$aa
 	beq l2476
-	dec $16
+	dec timer_state
 l2476:	lda #$19
 	ldx #$00
 	sta (cia+CRA),y
@@ -713,11 +714,11 @@ l2476:	lda #$19
 	and #$fe
 	cmp #$c4
 	beq l2489
-	dec $16
+	dec timer_state
 l2489:	lda (cia+TAHI),y
 	cmp #$cc
 	beq l2491
-	dec $16
+	dec timer_state
 l2491:	lda #$09
 	sta (cia+CRB),y
 	lda #$cc
@@ -726,11 +727,11 @@ l2491:	lda #$09
 	lda (cia+TBLO),y
 	cmp #$aa
 	bmi l24a3
-	dec $16
+	dec timer_state
 l24a3:	lda (cia+TBHI),y
 	cmp #$aa
 	beq l24ab
-	dec $16
+	dec timer_state
 l24ab:	lda #$19
 	ldx #$00
 	sta (cia+CRB),y
@@ -740,11 +741,11 @@ l24ab:	lda #$19
 	and #$fe
 	cmp #$c4
 	beq l24be
-	dec $16
+	dec timer_state
 l24be:	lda (cia+TBHI),y
 	cmp #$cc
 	beq l24c6
-	dec $16
+	dec timer_state
 l24c6:	dec temp_dec_value
 	bmi l24cd
 	jmp l23d4
@@ -767,19 +768,19 @@ l24e4:	dex
 	sta (cia+CRB),y
 	lda (cia+TBHI),y
 	beq l24f2
-	dec $16
+	dec timer_state
 l24f2:	lda (cia+TBLO),y
 	beq l24f8
-	dec $16
+	dec timer_state
 l24f8:	lda (cia+TAHI),y
 	cmp #$00
 	beq l2500
-	dec $16
+	dec timer_state
 l2500:	lda (cia+TALO),y
 	cmp #$08
 	beq l2508
-	dec $16
-l2508:	lda $16
+	dec timer_state
+l2508:	lda timer_state
 	beq tmrend
 ; timer fails
 	lda #$ff
@@ -819,30 +820,30 @@ l2549:	jsr cciairq
 	sta temp_irq
 	sta (cia+ICR),y
 	ldx #$00
-	stx $3b
+	stx temp3
 l2555:	lda (cia+ICR),y
 	bne l2567
 	inx
 	bne l2555
-	inc $3b
+	inc temp3
 	lda #$0f
-	cmp $3b
+	cmp temp3
 	bpl l2555
-	ldx $3b
+	ldx temp3
 	rts
 ; ----------------------------------------------------------------------------
 ; 
 l2567:	and temp_irq
 	cmp temp_irq
 	beq l256f
-	dec $16
+	dec timer_state
 l256f:	cpx #$db
 	beq l2575
-	dec $16
-l2575:	ldx $3b
+	dec timer_state
+l2575:	ldx temp3
 	cpx #$0a
 	beq l257d
-	dec $16
+	dec timer_state
 l257d:	rts
 ; ----------------------------------------------------------------------------
 ; 
@@ -2104,7 +2105,7 @@ pos0lo:		!byte $15, $3d, $45, $6d, $52
 pos0hi:		!byte $d1, $d1, $d3, $d3, $d5
 pos1lo:		!byte $b8, $10, $38, $40, $68, $42, $92
 pos1hi:		!byte $d0, $d1, $d1, $d3, $d3, $d7, $d7
-pos2lo:		!byte $e0, $0b, $33, $3b, $63, $56, $a6
+pos2lo:		!byte $e0, $0b, $33, temp3, $63, $56, $a6
 pos2hi:		!byte $d0, $d1, $d1, $d3, $d3, $d7, $d7
 pos3lo:		!byte $06, $2e, $e8, $36, $5e, $6a, $ba
 pos3hi:		!byte $d1, $d1, $d2, $d3, $d3, $d7, $d7
