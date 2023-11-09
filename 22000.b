@@ -593,6 +593,7 @@ TimerTest:
 	lda #SYSTEMBANK
 	sta IndirectBank
 	jsr eciairq
+; test timers with IRQ
 	ldy #$00
 	lda #$00
 	sta (cia+CRB),y			; disable timer B
@@ -614,180 +615,182 @@ tok2:	ldx #$01
 	dec timer_state			; dec fault counter
 tok3:	ldx #$01
 	jsr CheckIRQ
-	beq l23b7
+	beq tok4
 	dec timer_state			; dec fault counter
-l23b7:	lda (cia+CRA),y
+tok4:	lda (cia+CRA),y
 	and #$fe
-	sta (cia+CRA),y
+	sta (cia+CRA),y			; disable mtimer A
 	lda #$08
-	sta (cia+CRB),y
-	ldx #$02
-	jsr CheckIRQTimerB
-	beq l23ca
+	sta (cia+CRB),y			; timer B one shot
+	ldx #$02			; irq-bit timer B
+	jsr CheckIRQTimerB		; check timer B IRQ
+	beq tok5
 	dec timer_state			; dec fault counter
-l23ca:	lda (cia+CRB),y
+; test timer regs + load + load force
+tok5:	lda (cia+CRB),y
 	and #$fe
-	sta (cia+CRB),y
-	lda #$40
+	sta (cia+CRB),y			; disable timer B	
+	lda #$40			; test timer regs $40 times
 	sta temp_dec_value
-l23d4:	lda #$00
+tireglp:lda #$00
 	sta (cia+CRA),y
-	sta (cia+CRB),y
+	sta (cia+CRB),y			; clear and stop all timers
 	lda #$55
 	sta (cia+TALO),y
-	sta (cia+TAHI),y
+	sta (cia+TAHI),y		; load with hi
 	lda (cia+TALO),y
-	cmp #$55
-	beq l23e8
+	cmp #$55			; check timer A lo reg with $55
+	beq tok6
 	dec timer_state			; dec fault counter
-l23e8:	lda (cia+TAHI),y
-	cmp #$55
-	beq l23f0
+tok6:	lda (cia+TAHI),y
+	cmp #$55			; check timer A hi reg with $55
+	beq tok7
 	dec timer_state			; dec fault counter
-l23f0:	lda #$aa
+tok7:	lda #$aa
 	sta (cia+TAHI),y
-	sta (cia+TALO),y
+	sta (cia+TALO),y		; load with hi only!		
 	lda (cia+TALO),y
-	cmp #$55
-	beq l23fe
+	cmp #$55			; check timer A still $55 because load only with hi
+	beq tok8
 	dec timer_state			; dec fault counter
-l23fe:	lda (cia+TAHI),y
-	cmp #$aa
-	beq l2408
+tok8:	lda (cia+TAHI),y
+	cmp #$aa			; check timer A hi reg with $aa
+	beq tok9
 	lda #$ff
-	sta timer_state			; dec fault counter
-l2408:	lda #$10
-	sta (cia+CRA),y
+	sta timer_state			; set fault counter = $ff
+tok9:	lda #$10
+	sta (cia+CRA),y			; timer A force load to load lo
 	lda (cia+TALO),y
-	cmp #$aa
-	beq l2414
+	cmp #$aa			; check timer A lo reg with $aa
+	beq tok10
 	dec timer_state			; dec fault counter
-l2414:	lda (cia+TAHI),y
-	cmp #$aa
-	beq l241c
+tok10:	lda (cia+TAHI),y
+	cmp #$aa			; check timer A hi reg is still $aa
+	beq tok11
 	dec timer_state			; dec fault counter
-l241c:	lda #$55
+tok11:	lda #$55
 	sta (cia+TBLO),y
-l2420:	sta (cia+TBHI),y
+	sta (cia+TBHI),y		; load with hi
 	lda (cia+TBLO),y
-	cmp #$55
-	beq l242a
+	cmp #$55			; check timer B lo reg with $55
+	beq tok12
 	dec timer_state			; dec fault counter
-l242a:	lda (cia+TBHI),y
-	cmp #$55
-	beq l2432
+tok12:	lda (cia+TBHI),y
+	cmp #$55			; check timer B hi reg with $55
+	beq tok13
 	dec timer_state			; dec fault counter
-l2432:	lda #$aa
+tok13:	lda #$aa
 	sta (cia+TBHI),y
-	sta (cia+TBLO),y
+	sta (cia+TBLO),y		; load with hi only!
 	lda (cia+TBLO),y
-	cmp #$55
-	beq l2440
+	cmp #$55			; check timer B still $55 because load only with hi
+	beq tok14
 	dec timer_state			; dec fault counter
-l2440:	lda (cia+TBHI),y
-	cmp #$aa
-	beq l2448
+tok14:	lda (cia+TBHI),y
+	cmp #$aa			; check timer B hi reg with $aa
+	beq tok15
 	dec timer_state			; dec fault counter
-l2448:	lda #$10
-	sta (cia+CRB),y
+tok15:	lda #$10
+	sta (cia+CRB),y			; timer B force load to load lo
 	lda (cia+TBLO),y
-	cmp #$aa
-	beq l2454
+	cmp #$aa			; check timer B hi reg is still $aa
+	beq tok16
 	dec timer_state			; dec fault counter
-l2454:	lda (cia+TBHI),y
-	cmp #$aa
-	beq l245c
+tok16:	lda (cia+TBHI),y
+	cmp #$aa			; check timer B lo reg with $aa
+	beq tok17
 	dec timer_state			; dec fault counter
-l245c:	lda #$09
-	sta (cia+CRA),y
+tok17:	lda #$09
+	sta (cia+CRA),y			; timer A start with one shot
 	lda #$cc
 	sta (cia+TALO),y
-	sta (cia+TAHI),y
+	sta (cia+TAHI),y		; load $cccc in latch only because timer runs
 	lda (cia+TALO),y
-	cmp #$aa
-	bmi l246e
+	cmp #$aa			; check value not load while timer A runs
+	bmi tok18
 	dec timer_state			; dec fault counter
-l246e:	lda (cia+TAHI),y
-	cmp #$aa
-	beq l2476
+tok18:	lda (cia+TAHI),y
+	cmp #$aa			; check value not load while timer A runs
+	beq tok19
 	dec timer_state			; dec fault counter
-l2476:	lda #$19
+tok19:	lda #$19
 	ldx #$00
-	sta (cia+CRA),y
+	sta (cia+CRA),y			; timer A start with one shot, force load
 	txa
-	sta (cia+CRA),y
+	sta (cia+CRA),y			; stop timer A after only a few cycles
 	lda (cia+TALO),y
-	and #$fe
-	cmp #$c4
-	beq l2489
+	and #$fe			; eleminate bit 0
+	cmp #$c4			; check im timer A lo is now $c4 +/- 1 bit
+	beq tok20
 	dec timer_state			; dec fault counter
-l2489:	lda (cia+TAHI),y
-	cmp #$cc
-	beq l2491
+tok20:	lda (cia+TAHI),y
+	cmp #$cc			; check timer hi has not changed
+	beq tok21
 	dec timer_state			; dec fault counter
-l2491:	lda #$09
-	sta (cia+CRB),y
+tok21:	lda #$09
+	sta (cia+CRB),y			; timer B start with one shot
 	lda #$cc
 	sta (cia+TBLO),y
-	sta (cia+TBHI),y
+	sta (cia+TBHI),y		; load $cccc in latch only because timer runs
 	lda (cia+TBLO),y
-	cmp #$aa
-	bmi l24a3
+	cmp #$aa			; check value not load while timer A runs
+	bmi tok22
 	dec timer_state			; dec fault counter
-l24a3:	lda (cia+TBHI),y
-	cmp #$aa
-	beq l24ab
+tok22:	lda (cia+TBHI),y
+	cmp #$aa			; check value not load while timer A runs
+	beq tok23
 	dec timer_state			; dec fault counter
-l24ab:	lda #$19
+tok23:	lda #$19
 	ldx #$00
-	sta (cia+CRB),y
+	sta (cia+CRB),y			; timer B start with one shot, force load
 	txa
-	sta (cia+CRB),y
+	sta (cia+CRB),y			; stop timer B after only a few cycles
 	lda (cia+TBLO),y
-	and #$fe
-	cmp #$c4
-	beq l24be
+	and #$fe			; eleminate bit 0
+	cmp #$c4			; check im timer A lo is now $c4 +/- 1 bit
+	beq tok24
 	dec timer_state			; dec fault counter
-l24be:	lda (cia+TBHI),y
-	cmp #$cc
-	beq l24c6
+tok24:	lda (cia+TBHI),y
+	cmp #$cc			; check timer hi has not changed
+	beq tok25
 	dec timer_state			; dec fault counter
-l24c6:	dec temp_dec_value
-	bmi l24cd
-	jmp l23d4
-l24cd:	lda #$00
+tok25:	dec temp_dec_value
+	bmi tok26
+	jmp tireglp			; repeat $40 times
+;
+tok26:	lda #$00
 	sta (cia+TAHI),y
-	sta (cia+TBHI),y
+	sta (cia+TBHI),y		; clear timers hi
 	lda #$01
-	sta (cia+TBLO),y
+	sta (cia+TBLO),y		; load timer B lo = $01
 	lda #$08
-	sta (cia+TALO),y
+	sta (cia+TALO),y		; load timer A lo = $08
 	lda #$51
-	sta (cia+CRB),y
+	sta (cia+CRB),y			; start timer B, force load, counts underflow of timer A
 	lda #$19
-	sta (cia+CRA),y
-	tax
-l24e4:	dex
-	bne l24e4
-	txa
-	sta (cia+CRA),y
+	sta (cia+CRA),y			; starts timer A, one shot, force load
+	tax				; use $19 as counter
+tdelay	dex
+	bne tdelay			; delay
+	txa				; $00 to a
+	sta (cia+CRA),y			; stop + clear both timers
 	sta (cia+CRB),y
 	lda (cia+TBHI),y
-	beq l24f2
+	beq tok27			; timer B hi should be 0
 	dec timer_state			; dec fault counter
-l24f2:	lda (cia+TBLO),y
-	beq l24f8
+tok27:	lda (cia+TBLO),y
+	beq tok28			; timer B lo should be 0 because it counted underflow of timer A
 	dec timer_state			; dec fault counter
-l24f8:	lda (cia+TAHI),y
-	cmp #$00
-	beq l2500
+tok28:	lda (cia+TAHI),y
+	cmp #$00			; timer A hi should be 0
+	beq tok29
 	dec timer_state			; dec fault counter
-l2500:	lda (cia+TALO),y
-	cmp #$08
-	beq l2508
+tok29:	lda (cia+TALO),y
+	cmp #$08			; timer A lo $08 because force load
+	beq tok30
 	dec timer_state			; dec fault counter
-l2508:	lda timer_state			; dec fault counter
-	beq tmrend
+tok30:	lda timer_state			; dec fault counter
+	beq tmrend			; skip if test ok
 ; timer fails
 	lda #$ff
 	sta cia_tmr_fail		; remember timer failed
