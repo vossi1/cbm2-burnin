@@ -8,6 +8,7 @@
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
 ; FIX_ROMCHECKSUMS = 1		; fixes ROM Checksums for non 256kB machines
+; FIX_CIATNT = 1		; fixes TNT text in CIA if tod and timer test failed
 ; ***************************************** CONSTANTS *********************************************
 CODESTART		= $2000		; code start
 CODEEND			= $3347		; code end for program checksum
@@ -828,7 +829,7 @@ CheckIRQTimerB:
 	jsr Delay
 	bne CheckIRQ			; jump always
 CheckIRQ:
-	jsr cciairq			; clear IRQ reg
+	jsr cciairq			; load, clear IRQ reg
 	txa
 	sta temp_irq			; remember irq bit from x for timer
 	sta (cia+ICR),y			; clear mask bit for timer IRQ
@@ -988,11 +989,18 @@ todfail:lda #$ff
 	sta pointer3+1
 	jsr DrawBad			; draw chip BAD
 	lda cia_tmr_fail
+!ifdef FIX_CIATNT{
+	bne ciatnt				; branch if timer also failed 
+	ldx #$33			; "TOD"
+	bne drawtod			; jump always -> draw text
+ciatnt:	ldx #$34			; "TNT"
+} else{
 	bne todend			; skip if timer already failed 
 	ldx #$33			; "TOD"
 	bne drawtod			; jump always -> draw text
 ; unused - never reachable
 	ldx #$34			; "TNT"
+}
 drawtod:jsr DrawText			; sub: draw screen text
 todend:	rts
 ; ----------------------------------------------------------------------------
