@@ -1110,7 +1110,7 @@ todbad:	lda #$ff			; state = TOD bad
 todok:	cld				; reset decimal flag
 	rts
 ; ----------------------------------------------------------------------------
-; test, copy code, switch to new bank ???????????????????? OK
+; test, copy code, switch to new bank
 Test:
 	ldy last_rambank
 	dey				; banks to test = last bank -1
@@ -1122,8 +1122,8 @@ Test:
 	ldx last_rambank		; load last RAM bank if code is in bank 0
 tstnxbk:stx copy_target_bank
 	stx last_codebank		; last testbank for delete * on screen
-	jsr MarkExecuteBank			; delete *
-	jsr MarkTestBank			; draw *
+	jsr MarkExecuteBank		; mark execute bank
+	jsr MarkTestBank		; mark test bank
 	ldx copy_target_bank
 	stx IndirectBank		; set indirect bank = target bank
 	jsr RAMTest			; RAM Test - bank below code or last bank
@@ -1137,7 +1137,7 @@ tbnknt0:stx copy_target_bank		; store new target bank
 	bne tstnxbk			; test bank below
 	ldx copy_source_bank
 	stx copy_target_bank		; store last bank in banks counter
-	jsr MarkTestBank			; draw *
+	jsr MarkTestBank		; mark test bank
 	ldy last_rambank
 	dey				; decrease code bank
 	sty banks_counter
@@ -1156,7 +1156,7 @@ l2753:	dec banks_counter
 	bne tchknbk
 	ldx copy_target_bank
 	stx copy_source_bank
-	jsr MarkTestBank
+	jsr MarkTestBank		; mark test bank
 	bne l279f
 l2760:	stx temp5
 	txa
@@ -1181,14 +1181,14 @@ l277b:	ldy CodeBank
 	sty copy_target_bank
 	ldx CodeBank
 	stx copy_source_bank
-	jsr MarkTestBank
-	jsr MarkExecuteBank
+	jsr MarkTestBank		; mark test bank
+	jsr MarkExecuteBank		; mark execute bank
 	ldx copy_target_bank
 	stx IndirectBank
 	jsr RAMTest
 	ldx copy_target_bank
 	stx copy_source_bank
-	jsr MarkTestBank
+	jsr MarkTestBank		; mark test bank
 l279f:	jsr TestBank15
 	rts
 ; ----------------------------------------------------------------------------
