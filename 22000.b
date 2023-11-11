@@ -69,7 +69,8 @@ VOLUME			= $18 *2	; volume
 !addr temp_and_value	= $2a		; temp screen data and value
 !addr copy_target_bank	= $2b		; copy target bank
 !addr copy_target	= $2c		; 16bit copy target address
-!addr banks		= $2f		; RAM banks
+!addr last_rambank	= $2f		; last_rambank
+!addr last_codebank	= $30		; last testbank for delete *
 !addr copy_source_bank	= $31		; copy source bank
 !addr copy_source	= $32		; 16bit copy source address
 !addr counter		= $34		; counter
@@ -92,10 +93,13 @@ VOLUME			= $18 *2	; volume
 !addr tod_count3	= $4b		; tod test counter
 !addr temp3		= $4c		; temp/counter
 !addr temp4		= $4d		; temp
+!addr check_byte	= $4e		; check byte in RAM test
 !addr screendata_pointer= $37		; 16bit pointer screen data
-!addr text		= $50		; text to p
+!addr text		= $50		; text to print
 !addr temp_dec_value	= $55		; temp dec value
 !addr temp_or_value	= $55		; temp screen data or value
+!addr temp5		= $56		; temp
+!addr banks_counter	= $57		; counter for test banks
 !addr temp_bank		= $58		; temp f bank
 !addr pointer3		= $5b		; 16bit pointer
 !addr pointer4		= $5d		; 16bit pointer
@@ -124,7 +128,7 @@ clrzplp:sta $0000,y
 	bne clrzplp
 ; check if 128k or 256k machine
 	ldx #$02
-	stx banks			; default 2 banks
+	stx last_rambank			; default 2 last_rambank
 	inx
 	stx IndirectBank		; set bank 3 as indirect bank
 	lda #$60
@@ -139,7 +143,7 @@ chkbklp:sta (pointer1),y
 	bne chkbklp			; check next byte
 	beq drawscr			; no RAM from $6000 to $60ff
 cbm256:	lda #$04
-	sta banks			; store 4 banks
+	sta last_rambank			; store 4 last_rambank
 ; draw chips
 drawscr:jsr ClearScreen			; clear screen
 	ldx #0
@@ -283,7 +287,7 @@ drwiclp:ldx temp4
 	stx temp1
 	bpl --				; next char
 ;
-	lda banks
+	lda last_rambank
 	cmp #$04
 	beq +				; skip for 256kB
 	ldx #$38			; NO RAM
@@ -526,9 +530,9 @@ ROMChecksums:
 	jsr prntrom			; calculate and print checksum of one rom
 	ldy #$05			; screen pos basic hi
 	ldx #$20
-	lda banks
+	lda last_rambank
 	cmp #$04
-	beq banks4			; branch 4 ram banks
+	beq last_rambank4			; branch 4 ram last_rambank
 ; ******************** FIX Romchecksum for non-256kB machines ********************
 !ifdef FIX_ROMCHECKSUMS{
 	lda #$a0			; basic hi address a000
@@ -536,13 +540,13 @@ ROMChecksums:
 	lda $a0				; ***** NO SENSE - area of IO pointer !!!
 }
 	bvc bashi			; ***** NO SENSE - branch dependent of last adc/sbc ? 
-banks4:	lda #$a0			; basic hi address a000
+last_rambank4:	lda #$a0			; basic hi address a000
 bashi:	jsr prntrom			; calculate and print checksum of one rom
 	ldy #$0a
 	ldx #$20
-	lda banks
+	lda last_rambank
 	cmp #$04
-	beq baslo			; branch 4 ram banks
+	beq baslo			; branch 4 ram last_rambank
 ; ******************** FIX Romchecksum for non-256kB machines ********************
 !ifdef FIX_ROMCHECKSUMS{
 	lda #$80			; basic hi address 8000
@@ -1108,53 +1112,53 @@ todok:	cld				; reset decimal flag
 ; ----------------------------------------------------------------------------
 ; test, copy code, switch to new bank ???????????????????? OK
 Test:
-	ldy banks
-	dey
-	sty $57
+	ldy last_rambank
+	dey				; banks to test = last bank -1
+	sty banks_counter		; counter for banks to test
 	ldx CodeBank
-	stx copy_source_bank
-	dex
-	bne l2713
-	ldx banks
-l2713:	stx copy_target_bank
-	stx $30
-	jsr l2a34
-	jsr l2a0f
+	stx copy_source_bank		; source bank = actual codebank
+	dex				; decrease for bank to test
+	bne tstnxbk			; skip if testbank is >= 0
+	ldx last_rambank		; load last RAM bank if code is in bank 0
+tstnxbk:stx copy_target_bank
+	stx last_codebank		; last testbank for delete * on screen
+	jsr MarkExecuteBank			; delete *
+	jsr MarkTestBank			; draw *
 	ldx copy_target_bank
-	stx IndirectBank
-	jsr RAMTest
+	stx IndirectBank		; set indirect bank = target bank
+	jsr RAMTest			; RAM Test - bank below code or last bank
 	ldx copy_target_bank
-	stx copy_source_bank
-	dex
-	bne l272d
-	ldx banks
-l272d:	stx copy_target_bank
-	dec $57
-	bne l2713
+	stx copy_source_bank		; source bank = last test bank
+	dex				; decrease bank
+	bne tbnknt0			; skip if testbank is >= 0
+	ldx last_rambank
+tbnknt0:stx copy_target_bank		; store new target bank 
+	dec banks_counter		; decrease banks to test counter
+	bne tstnxbk			; test bank below
 	ldx copy_source_bank
-	stx copy_target_bank
-	jsr l2a0f
-	ldy banks
-	dey
-	sty $57
+	stx copy_target_bank		; store last bank in banks counter
+	jsr MarkTestBank			; draw *
+	ldy last_rambank
+	dey				; decrease code bank
+	sty banks_counter
 	ldx CodeBank
-	stx $30
+	stx last_codebank		; last testbank for delete * on screen
 	stx copy_target_bank
 	dex
-	bne l274a
-	ldx banks
-l274a:	lda $16,x
+	bne tchknbk			; skip if bank is > 0
+	ldx last_rambank		; load last RAM bank if code is in bank 0
+tchknbk:lda $16,x
 	beq l2760
 l274e:	dex
 	bne l2753
-	ldx banks
-l2753:	dec $57
-	bne l274a
+	ldx last_rambank
+l2753:	dec banks_counter
+	bne tchknbk
 	ldx copy_target_bank
 	stx copy_source_bank
-	jsr l2a0f
+	jsr MarkTestBank
 	bne l279f
-l2760:	stx $56
+l2760:	stx temp5
 	txa
 	ldx #$00
 	ldy #$00
@@ -1165,10 +1169,10 @@ l2760:	stx $56
 	inx
 	jsr CopyMemory
 	beq l277b
-	ldx $56
+	ldx temp5
 	bpl l274e
 l277b:	ldy CodeBank
-	ldx $56
+	ldx temp5
 	stx CodeBank
 	nop
 	nop
@@ -1177,14 +1181,14 @@ l277b:	ldy CodeBank
 	sty copy_target_bank
 	ldx CodeBank
 	stx copy_source_bank
-	jsr l2a0f
-	jsr l2a34
+	jsr MarkTestBank
+	jsr MarkExecuteBank
 	ldx copy_target_bank
 	stx IndirectBank
 	jsr RAMTest
 	ldx copy_target_bank
 	stx copy_source_bank
-	jsr l2a0f
+	jsr MarkTestBank
 l279f:	jsr TestBank15
 	rts
 ; ----------------------------------------------------------------------------
@@ -1237,11 +1241,12 @@ RamTestBank15:
 	cmp #SYSTEMBANK			; check if target = bank 15
 	beq notbnkf			; skip if not bank 15
 	jsr PlaySound
-	ldx #$0e
+	ldx #$0e			; ""LO ADR BYTE TEST"
 	jsr PrintText			; print screen text
 notbnkf:ldy start_low			; start with Y = $02
 	lda start_high
 	sta pointer1+1			; start with page $00
+; test1 with upcounting value
 test1lp:tya				; Y as test-byte
 	sta temp3			; remember test-byte
 	sta (pointer1),y		; store test value to test-bank
@@ -1255,288 +1260,299 @@ test1lp:tya				; Y as test-byte
 	lda pointer1+1
 	cmp end_high			; check if last test page
 	bne test1lp			; next page
-	ldx #$0f
-	jsr ResetStartAddress
-l2829:	tya
+	ldx #$0f			; "HI ADR BYTE TEST" 
+	jsr ResetStartAddress		; reset start address for next test, print text
+test2lp:tya
 	sta temp3
-	lda (pointer1),y
+	lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l2835
-	jsr TestError
-l2835:	lda pointer1+1
+	beq +
+	jsr TestError			; jump to test error
++	lda pointer1+1
 	sta (pointer1),y
 	lda (pointer1),y
-	eor pointer1+1
-	beq l2842
-	jsr TestError
-l2842:	iny
-	bne l2829
+	eor pointer1+1			; check with address highbyte
+	beq +
+	jsr TestError			; jump to test error
++	iny
+	bne test2lp
 	inc pointer1+1
 	lda pointer1+1
 	cmp end_high
-	bne l2829
-	ldx #$10
-	jsr ResetStartAddress
+	bne test2lp
+	ldx #$10			; "CHKRBRD $55, $AA"
+	jsr ResetStartAddress		; reset start address for next test, print text
+; test 3 first byte with $55, second with $aa
 	lda #$55
 	sta temp3
 	lda #$aa
 	sta temp4
-l285a:	lda (pointer1),y
+test3lp:lda (pointer1),y		; check byte from last test again
 	eor pointer1+1
-	beq l2863
-	jsr TestError
-l2863:	lda #$55
+	beq +
+	jsr TestError			; jump to test error
++	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l2870
-	jsr TestError
-l2870:	iny
-	lda (pointer1),y
+	eor temp3			; check with $55
+	beq +
+	jsr TestError			; jump to test error
++	iny				; next byte
+	lda (pointer1),y		; check byte from last test again
 	eor pointer1+1
-	beq l287a
-	jsr TestError
-l287a:	lda #$aa
+	beq +
+	jsr TestError			; jump to test error
++	lda #$aa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp4
-	beq l2887
-	jsr TestError
-l2887:	iny
-	bne l285a
+	eor temp4			; check second byte with $aa
+	beq +
+	jsr TestError			; jump to test error
++	iny
+	bne test3lp
 	inc pointer1+1
 	lda pointer1+1
 	cmp end_high
-	bne l285a
-	ldx #$11
-	jsr ResetStartAddress
-l2897:	lda (pointer1),y
+	bne test3lp
+	ldx #$11			; "AA, $55"
+	jsr ResetStartAddress		; reset start address for next test, print text
+test4lp:lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l28a0
-	jsr TestError
-l28a0:	lda #$aa
+	beq+
+	jsr TestError			; jump to test error
++	lda #$aa
 	sta (pointer1),y
 	lda (pointer1),y
+	eor temp4			; check with $aa
+	beq +
+	jsr TestError			; jump to test error
++	iny				; next byte
+	lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l28ad
-	jsr TestError
-l28ad:	iny
-	lda (pointer1),y
-	eor temp4
-	beq l28b7
-	jsr TestError
-l28b7:	lda #$55
+	beq +
+	jsr TestError			; jump to test error
++	lda #$55
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l28c4
-	jsr TestError
-l28c4:	iny
-	bne l2897
+	eor temp3			; check with $55
+	beq +
+	jsr TestError			; jump to test error
++	iny
+	bne test4lp
 	inc pointer1+1
 	lda pointer1+1
 	cmp end_high
-	bne l2897
-	ldx #$12
-	jsr ResetStartAddress
+	bne test4lp
+	ldx #$12			; "MARCH INC ADR $5A"
+	jsr ResetStartAddress		; reset start address for next test, print text
+; test 5 test with $5a
 	ldx #$5a
-	stx $4e
-l28d8:	lda (pointer1),y
+	stx check_byte
+test5lp:lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l28e1
-	jsr TestError
-l28e1:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4e
-	beq l28ed
-	jsr TestError
-l28ed:	iny
-	lda (pointer1),y
+	eor check_byte			; check with $5a
+	beq +
+	jsr TestError			; jump to test error
++	iny				; next byte
+	lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l28f7
-	jsr TestError
-l28f7:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4e
-	beq l2903
-	jsr TestError
-l2903:	iny
-	bne l28d8
+	eor check_byte			; check with $5a
+	beq +
+	jsr TestError			; jump to test error
++	iny
+	bne test5lp
 	inc pointer1+1
 	lda pointer1+1
 	cmp end_high
-	bne l28d8
+	bne test5lp
 	jsr PlaySound
-	ldx #$13
-	jsr l2b95
+	ldx #$13			; "DEC ADR $A5"
+	jsr MaxStartAddress		; set address to maximum, print text
+; test 6 with $a5 downwards
 	ldx #$5a
 	stx temp3
 	ldx #$a5
 	stx temp4
-l291e:	lda (pointer1),y
+test6lp:lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l2927
-	jsr TestError
-l2927:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp4
-	beq l2933
-	jsr TestError
-l2933:	dey
+	eor temp4			; check with $a5
+	beq +
+	jsr TestError			; jump to test error
++	dey				; next byte down
 	cpy #$ff
-	bne l291e
+	bne test6lp
 	dec pointer1+1
 	lda pointer1+1
 	cmp start_high
-	bne l291e
-l2940:	lda (pointer1),y
+	bne test6lp			; next page down
+; check last page because downwards
+tst6alp:lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l2949
-	jsr TestError
-l2949:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp4
-	beq l2955
-	jsr TestError
-l2955:	dey
+	eor temp4			; check with $a5
+	beq +
+	jsr TestError			; jump to test error
++	dey
 	cpy temp2
-	bne l2940
-	ldx #$14
-	jsr l2b95
+	bne tst6alp			; next byte down
+	ldx #$14			; "5A"
+	jsr MaxStartAddress		; set address to maximum, print text
+; test 7 with $5a downwards
 	ldx #$5a
-l2961:	lda (pointer1),y
+test7lp:lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l296a
-	jsr TestError
-l296a:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l2976
-	jsr TestError
-l2976:	dey
+	eor temp3			; check with $5a
+	beq +
+	jsr TestError			; jump to test error
++	dey
 	cpy #$ff
-	bne l2961
+	bne test7lp			; next byte down
 	dec pointer1+1
 	lda pointer1+1
 	cmp start_high
-	bne l2961
-l2983:	lda (pointer1),y
+	bne test7lp			; next page down
+; check last page because downwards
+tst7alp:lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l298c
-	jsr TestError
-l298c:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l2998
-	jsr TestError
-l2998:	dey
+	eor temp3			; check with $5a
+	beq +
+	jsr TestError			; jump to test error
++	dey
 	cpy temp2
-	bne l2983
-	ldx #$15
-	jsr ResetStartAddress
+	bne tst7alp
+	ldx #$15			; "INC ADR $FF"
+	jsr ResetStartAddress		; reset start address for next test, print text
 	ldx #$ff
-	stx $4e
-l29a6:	lda (pointer1),y
+	stx check_byte
+test8lp:lda (pointer1),y		; check byte from last test again
 	eor temp3
-	beq l29af
-	jsr TestError
-l29af:	txa
+	beq +
+	jsr TestError			; jump to test error
++	txa
 	sta (pointer1),y
 	lda (pointer1),y
-	eor $4e
-	beq l29bb
-	jsr TestError
-l29bb:	iny
-	bne l29a6
+	eor check_byte			; check with $ff
+	beq +
+	jsr TestError			; jump to test error
++	iny
+	bne test8lp			; next byte
 	inc pointer1+1
 	lda pointer1+1
 	cmp end_high
-	bne l29a6
+	bne test8lp			; next page
 	ldx #$16
-	jsr l2b95
+	jsr MaxStartAddress		; set address to maximum, print text
+; test 9 with $00 downwards
 	ldx #$00
 	stx temp3
 	ldx #$ff
 	stx temp4
-l29d3:	txa
-	lda (pointer1),y
+test9lp:txa
+	lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l29dd
-	jsr TestError
-l29dd:	sta (pointer1),y
+	beq +
+	jsr TestError			; jump to test error
++	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l29e8
-	jsr TestError
-l29e8:	dey
+	eor temp3			; check with $00
+	beq +
+	jsr TestError			; jump to test error
++	dey
 	cpy #$ff
-	bne l29d3
+	bne test9lp			; next byte down
 	dec pointer1+1
 	lda pointer1+1
 	cmp start_high
-	bne l29d3
-l29f5:	txa
-	lda (pointer1),y
+	bne test9lp			; next page down
+; check last page because downwards
+tst9alp:txa
+	lda (pointer1),y		; check byte from last test again
 	eor temp4
-	beq l29ff
-	jsr TestError
-l29ff:	sta (pointer1),y
+	beq +
+	jsr TestError			; jump to test error
++	sta (pointer1),y
 	lda (pointer1),y
-	eor temp3
-	beq l2a0a
-	jsr TestError
-l2a0a:	dey
+	eor temp3			; check with $00
+	beq +
+	jsr TestError			; jump to test error
++	dey
 	cpy temp2
-	bne l29f5
-l2a0f:	lda #$30
+	bne tst9alp			; next byte down
+; mark test bank with * and delete last *
+MarkTestBank:
+	lda #$30			; base screen address for the *
 	sta pointer1
 	lda #$d7
 	sta pointer1+1
 	ldx #SYSTEMBANK
 	stx IndirectBank
-	ldx copy_target_bank
-	dex
+	ldx copy_target_bank		; load test bank
+	dex				; bank -1 for position 0-3
 	txa
-	jsr calc2
+	jsr mul20			; calc position *20
 	tay
-	lda #$2a
-	sta (pointer1),y
+	lda #'*'
+	sta (pointer1),y		; print *
 	ldx copy_source_bank
-	dex
-l2a2a:	txa
-	jsr calc2
+	dex				; bank -1 for position 0-3
+	txa				; bank in a
+	jsr mul20			; calc position *20
 	tay
-	lda #$20
-	sta (pointer1),y
+	lda #' '
+	sta (pointer1),y		; delete *
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2a34:	lda #$80
+; mark execute bank with * and delete last *
+MarkExecuteBank:
+	lda #$80			; base screen address for the *			
 	sta pointer1
 	lda #$d7
 	sta pointer1+1
 	ldx #SYSTEMBANK
 	stx IndirectBank
-	ldx CodeBank
-	dex
+	ldx CodeBank			; load execute bank
+	dex				; bank -1 for position 0-3
 	txa
-	jsr calc2
+	jsr mul20			; calc position *20
 	tay
-	lda #$2a
-	sta (pointer1),y
-	ldx $30
-	dex
+	lda #'*'
+	sta (pointer1),y		; print *
+	ldx last_codebank		; last testbank
+	dex				; bank -1 for position 0-3
 	txa
-	jsr calc2
+	jsr mul20			; calc position *20
 	tay
-	lda #$20
-	sta (pointer1),y
+	lda #' '
+	sta (pointer1),y		; delete *
 	rts
 ; ----------------------------------------------------------------------------
 ;  test error
@@ -1597,7 +1613,7 @@ l2a71:	stx IndirectBank
 	lda #$ff
 	sta $0017,y
 	tya
-	jsr calc2
+	jsr mul20
 	tay
 	lda #$31
 	sta pointer3
@@ -1619,7 +1635,7 @@ l2ae3:	ldy temp_bank
 	lda screen_pos_hi,y
 	sta pointer3+1
 	ldx #$08
-	stx $56
+	stx temp5
 l2af4:	lda faulty_bits
 	clc
 	rol
@@ -1632,9 +1648,9 @@ l2aff:	lda #$05
 	sta pointer3
 	bcc l2b0a
 	inc pointer3+1
-l2b0a:	ldx $56
+l2b0a:	ldx temp5
 	dex
-	stx $56
+	stx temp5
 	bne l2af4
 l2b11:	ldx temp_bank
 	stx IndirectBank
@@ -1715,8 +1731,9 @@ ResetStartAddress:
 	sta pointer1+1
 	rts
 ; ----------------------------------------------------------------------------
-; Set RAM Test start address to last byte
-l2b95:	stx text			; remember text
+; Set RAM Test start address to last byte and print text x
+MaxStartAddress:	
+	stx text			; remember text
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq +				; skip if systembank
@@ -1760,8 +1777,8 @@ copylp:	ldx copy_source_bank
 	ldy temp6			; load start low byte
 	lda temp4			; load target high
 	ora copy_target			; or target low
-	bne chkcopy			; skip if target is not $00
-	ldy #$12			; start at low byte $12
+	bne chkcopy			; skip if target is not $0000
+	ldy #$12			; start at low byte $12 above check+error vars
 chkcopy:lda temp3
 	sta copy_source+1		; save copy source high
 	lda temp4
@@ -1826,13 +1843,13 @@ Nibble2Screencode:
 scdec:	ora #$30			; calc screencode 0-9 -> 30-39
 scend:	rts
 ; ----------------------------------------------------------------------------
-; 
-calc2:	jsr mul5
+; multiply a = a * 20
+mul20:	jsr mul5
 	asl
 	asl
 	rts
 ; ----------------------------------------------------------------------------
-; 
+; multiply: a = a * 5
 mul5:	clc
 	sta temp1
 	asl
