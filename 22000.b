@@ -1,9 +1,13 @@
 ; CBMII b128-256 burnin 
 ; disassembled by vossi 10/2023
 ;
-; NOTE: ROM Checksum routine is faulty:
-;	with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 
-;
+; ROM Checksum routine is faulty:
+;   with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 
+; TOD+Timer-Test bad is not showed:
+;   if Timer and TOD tests are not successful it does not show TNT in the chip
+; Static RAM faults are showed false:
+;   if the ZP RAM is faulty it always also shows the screen RAM bad	
+;	
 !cpu 6502
 !ct scr		; standard text/char conversion table -> Screencode (pet = PETSCII, raw)
 !to "load 1.prg", cbm
@@ -86,8 +90,7 @@ VOLUME			= $18 *2	; volume
 !addr timer_count	= $3b		; counter timer tests
 !addr temp6		= $3d		; temp
 !addr column		= $3e		; column draw chips
-!addr temp8		= $3f		; temp
-
+!addr inverse_state	= $3f		; inverse state of screen (clear zp inits to 0=non)
 !addr start_high	= $40		; RAM test start hi
 !addr start_low		= $41		; RAM test start lo
 !addr time2_hours	= $42		; time 1 hours
@@ -155,7 +158,7 @@ cbm256:	lda #$04
 	sta last_rambank		; store 4 last_rambank
 ; draw chips
 drawscr:jsr ClearScreen			; clear screen
-	ldx #0
+	ldx #0				; chip line
 	jsr SetChipAddress		; set pointer2 to chip graphics address
 	lda #$f0
 	ldy #$d0
@@ -166,7 +169,7 @@ drawscr:jsr ClearScreen			; clear screen
 	lda #$50
 	ldy #$d5
 	jsr DrawChips			; draw chip graphics to screen
-	ldx #3
+	ldx #3				; chip line
 	jsr SetChipAddress		; set pointer2 to chip graphics address
 	lda #$30
 	ldy #$d2
@@ -177,7 +180,7 @@ drawscr:jsr ClearScreen			; clear screen
 	lda #$90
 	ldy #$d6
 	jsr DrawChips			; draw chip graphics to screen
-	ldx #2
+	ldx #2				; chip line
 	jsr SetChipAddress		; set pointer2 to chip graphics address
 	lda #$e0
 	ldy #$d1
@@ -188,7 +191,7 @@ drawscr:jsr ClearScreen			; clear screen
 	lda #$40
 	ldy #$d6
 	jsr DrawChips			; draw chip graphics to screen
-	ldx #1
+	ldx #1				; chip line
 	jsr SetChipAddress		; set pointer2 to chip graphics address
 	lda #$40
 	ldy #$d1
@@ -305,7 +308,7 @@ prchrlp:ldx temp1
 	jsr PrintText			; print screen text
 +	jmp Main
 ; ----------------------------------------------------------------------------
-; draw one line of chip graphics to screen
+; draw one line of chip graphics to screen x=line, pointer2=chip graphics
 DrawChips:
 	sta pointer1			; store screen pointer
 	sty pointer1+1
@@ -323,13 +326,13 @@ drawlp1:lda actual_codebank
 	sta IndirectBank		; set indirect bank to actual codebank
 	lda (pointer2),y		; load graphics
 	dey				; decrease and store chip char pos
-	sty temp6
+	sty temp6			; remember chip char
 	ldy column			; load column
 	ldx #SYSTEMBANK
 	stx IndirectBank		; systembank for screen
 	sta (pointer1),y
 	dey
-	sty column			; store column
+	sty column			; store next column
 	ldy temp6			; load chip char pos
 	bpl drawlp1			; draw next char of chip
 	ldx chip_count
@@ -438,18 +441,19 @@ prdiglo:lda cycles,x			; load digit
 DummySub:
 	rts				; delay only
 ; ----------------------------------------------------------------------------
-; 
-l225a:	lda IndirectBank
+; invert screen
+InvertScreen:
+	lda IndirectBank
 	sta temp_bank			; remember indirect bank
 	lda #SYSTEMBANK
 	sta IndirectBank		; systembank
 	ldy #$00
-	lda #$0c
-	sta (crtadr),y
-	lda temp8
-	eor #$20
-	sta (crtdata),y
-	sta temp8
+	lda #$0c			; reg display start address
+	sta (crtadr),y			; write to crt address reg
+	lda inverse_state		; load last state
+	eor #$20			; invert screen
+	sta (crtdata),y			; write data to crt
+	sta inverse_state		; remember last state
 	lda temp_bank
 	sta IndirectBank		; restore indirect bank
 	rts
@@ -1750,7 +1754,7 @@ ResetStartAddress:
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq +				; skip if systembank
-	jsr l225a
+	jsr InvertScreen		; invert screen
 	ldx text			; recall text
 	jsr PrintText			; print screen text
 +	ldy start_low
@@ -1764,7 +1768,7 @@ MaxStartAddress:
 	lda IndirectBank
 	cmp #SYSTEMBANK
 	beq +				; skip if systembank
-	jsr l225a
+	jsr InvertScreen		; invert screen
 	ldx text			; recall text
 	jsr PrintText			; print screen text
 +	ldy end_high
