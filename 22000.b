@@ -9,6 +9,7 @@
 !to "load 1.prg", cbm
 ; FIX_ROMCHECKSUMS = 1		; fixes ROM Checksums for non 256kB machines
 ; FIX_CIATNT = 1		; fixes TNT text in CIA if tod and timer test failed
+; FIX_STATICERROR = 1		; fixes always both RAMs in bank 15 showed faulty
 ; ***************************************** IMPORTANT *********************************************
 CODESIZE		= $33		; Codesize to copy from bank to bank !!!
 ; ***************************************** CONSTANTS *********************************************
@@ -1013,6 +1014,7 @@ todfail:lda #$ff
 	sta pointer3+1
 	jsr DrawBad			; draw chip BAD
 	lda cia_tmr_fail
+; ******************** FIX  TNT text in CIA if tod and timer test failed ********************
 !ifdef FIX_CIATNT{
 	bne ciatnt			; branch if timer also failed 
 	ldx #$33			; "TOD"
@@ -1676,7 +1678,12 @@ errbnkf:lda pointer1+1
 	lda #$d5
 	sta pointer3+1
 	jsr DrawBad			; draw chip BAD
-	bmi errfend			; skip always - y is 15 = not minus!
+; ******************** FIX  always both RAMs in bank 15 showed faulty ********************
+!ifdef FIX_STATICERROR{
+	bpl errfend			; jump always ********** FIX **********
+} else{
+	bmi errfend			; FAULTY: skip always - y is 15 = not minus!
+}
 ; faulty screen RAM
 erfnt0x:lda #$a6			; screen position of screen RAM
 	sta pointer3
@@ -1684,7 +1691,12 @@ erfnt0x:lda #$a6			; screen position of screen RAM
 	sta pointer3+1
 	lda CodeBank
 	jsr DrawBadCodebank		; draw in screen RAM copy in codebank
-	bmi errfend			; skip always - y is 15 = not minus!
+; ******************** FIX  draws chip additional in systembank BAD ********************
+!ifdef FIX_STATICERROR{
+	bpl errfend			; jump always ********** FIX **********
+} else{
+	bmi errfend			; FAULTY: skip always - y is 15 = not minus!
+}
 ; draw bad chip reverse
 DrawBad:
 	lda #SYSTEMBANK
