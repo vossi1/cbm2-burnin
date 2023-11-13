@@ -1562,129 +1562,134 @@ MarkExecuteBank:
 ; ----------------------------------------------------------------------------
 ;  test error
 TestError:
-	clv
-	sta faulty_bits
-	stx storage1
-	sty storage2
-	jsr Hex2Screencode			; calc screen code for a byte
+	clv				; clear overflow flag for bank 15 coloring check
+	sta faulty_bits			; remember faulty bits
+	stx storage1			; remember X
+	sty storage2			; remember lowbyte
+	jsr Hex2Screencode		; calc screen code for a byte
 	ldx IndirectBank
-	stx temp_bank
-	cpx #SYSTEMBANK
-	bne l2a6f
-	ldx CodeBank
-	bne l2a71
-l2a6f:	ldx #SYSTEMBANK
-l2a71:	stx IndirectBank
-	sty temp1
+	stx temp_bank			; remember defective test bank
+	cpx #SYSTEMBANK			; check if bank 15
+	bne errnbkf			; skip if not systembank
+	ldx CodeBank			; load codebank
+	bne +				; jump always, because codebank is never 0 !
+errnbkf:ldx #SYSTEMBANK			; switch indirect bank to systembank, if error is
++	stx IndirectBank		;   not in bank 15, else to codebank
+	sty temp1			; remember low nibble screen code
 	ldy #$00
 	ldx #$e0
 	stx pointer3
 	ldx #$d6
 	stx pointer3+1
-	sta (pointer3),y
+	sta (pointer3),y		; print high nibble to screen
 	iny
 	lda temp1
-	sta (pointer3),y
-	lda temp_bank
-	jsr Hex2Screencode			; calc screen code for a byte
+	sta (pointer3),y		; print low nibble
+	lda temp_bank			; load defective test bank
+	jsr Hex2Screencode		; calc screen code for a byte
 	tya
-	ldy #$03
-	sta (pointer3),y
+	ldy #$03			; leave one space
+	sta (pointer3),y		; print defective bank to screen
 	lda pointer1+1
-	jsr Hex2Screencode			; calc screen code for a byte
-	sty temp1
-	ldy #$05
-	sta (pointer3),y
+	jsr Hex2Screencode		; calc screen code for a byte
+	sty temp1			; remember low nibble screen code
+	ldy #$05			; leave one space
+	sta (pointer3),y		; print address highbyte high nibble
 	iny
 	lda temp1
-	sta (pointer3),y
+	sta (pointer3),y		; print address highbyte low nibble
 	lda storage2
-	jsr Hex2Screencode			; calc screen code for a byte
-	sty temp1
+	jsr Hex2Screencode		; calc screen code for a byte
+	sty temp1			; remember low nibble
 	ldy #$07
-	sta (pointer3),y
+	sta (pointer3),y		; print address lowbyte high nibble
 	iny
 	lda temp1
-	sta (pointer3),y
+	sta (pointer3),y		; print address lowbyte low nibble
 	lda CodeBank
-	jsr Hex2Screencode			; calc screen code for a byte
+	jsr Hex2Screencode		; calc screen code for a byte
 	tya
-	ldy #$0b
-	sta (pointer3),y
-	ldy temp_bank
-	cpy #$0f
-	beq l2b1c
+	ldy #$0b			; leave two spaces
+	sta (pointer3),y		; print codebank
+	ldy temp_bank			; load defective testbank
+	cpy #SYSTEMBANK			; check if bank 15
+	beq errbnkf			; jump to error in bank 15
 	dey
 	lda #$ff
-	sta bank_state_full,y
+	sta bank_state_full,y		; store $ff to bank_state - ?? = defective bank
 	tya
-	jsr mul20
+	jsr mul20			; *20 for screen position
 	tay
 	lda #$31
 	sta pointer3
 	lda #$d7
 	sta pointer3+1
-	lda (pointer3),y
-	bmi l2ae3
-	ldx #$13
-l2ad9:	lda (pointer3),y
+	lda (pointer3),y		; load char behind segment mark *
+	bmi drwfbit			; skip if already reverse
+; draw test segment reverse
+	ldx #19				; 19 characters
+segrvlp:lda (pointer3),y
 	ora #$80
-	sta (pointer3),y
+	sta (pointer3),y		; reverse
 	iny
 	dex
-	bne l2ad9
-l2ae3:	ldy temp_bank
+	bne segrvlp			; next char
+; draw faulty chips BAD
+drwfbit:ldy temp_bank			; load defective test bank
 	dey
 	lda screen_pos_lo,y
 	sta pointer3
-	lda screen_pos_hi,y
+	lda screen_pos_hi,y		; load screen pos for first chip in bank
 	sta pointer3+1
-	ldx #$08
-	stx temp5
-l2af4:	lda faulty_bits
+	ldx #8				; 8 chips
+	stx temp5			; bits counter
+fbitlp:	lda faulty_bits
 	clc
-	rol
-	sta faulty_bits
-	bcc l2aff
+	rol				; shift msb of faulty bits to carry
+	sta faulty_bits			; remember
+	bcc nxchip			; skip if bit not faulty
 	jsr DrawBad			; draw chip BAD
-l2aff:	lda #$05
+nxchip:	lda #5				; chip distance
 	clc
-	adc pointer3
+	adc pointer3			; add 5 chars for next chip position
 	sta pointer3
-	bcc l2b0a
+	bcc +
 	inc pointer3+1
-l2b0a:	ldx temp5
++	ldx temp5			; load bits counter
 	dex
-	stx temp5
-	bne l2af4
-l2b11:	ldx temp_bank
-	stx IndirectBank
-	ldx storage1
+	stx temp5			; store left bits
+	bne fbitlp			; next bit
+errfend:ldx temp_bank			; load defective test bank
+	stx IndirectBank		;   set as indirect bank 
+	ldx storage1			; restore registers for test continue
 	ldy storage2
 	lda #$00
 	rts
 ; ----------------------------------------------------------------------------
-; 
-l2b1c:	lda pointer1+1
+; Test error in bank 15
+errbnkf:lda pointer1+1
 	and #$f0
-	bne l2b2f
-	lda #$a1
+	bne erfnt0x			; skip if error not in $0xxx
+; faulty ZP RAM
+	lda #$a1			; screen position of ZP RAM
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
 	jsr DrawBad			; draw chip BAD
-	bmi l2b11
-l2b2f:	lda #$a6
+	bmi errfend			; skip always - y is 15 = not minus!
+; faulty screen RAM
+erfnt0x:lda #$a6			; screen position of screen RAM
 	sta pointer3
 	lda #$d5
 	sta pointer3+1
 	lda CodeBank
-	jsr l2b40
-	bmi l2b11
+	jsr DrawBadCodebank		; draw in screen RAM copy in codebank
+	bmi errfend			; skip always - y is 15 = not minus!
 ; draw bad chip reverse
 DrawBad:
 	lda #SYSTEMBANK
-l2b40:	sta IndirectBank		; systembank for screen
+DrawBadCodebank:
+	sta IndirectBank		; systembank for screen
 	tya
 	pha				; preserve y reg
 	ldy #$00
@@ -1718,7 +1723,7 @@ badlp:	lda chip_bad,y			; print BAD in chip
 	sta (pointer4),y
 	dey
 	bpl badlp
-alrebad:pla
+alrebad:pla				; get stored y reg
 	tay
 	rts
 ; ----------------------------------------------------------------------------
