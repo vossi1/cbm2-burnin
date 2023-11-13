@@ -64,7 +64,7 @@ VOLUME			= $18 *2	; volume
 !addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
 !addr temp_checksum1	= $1d		; temp test program checksum
 !addr temp_checksum2	= $1e		; temp test program checksum
-!addr temp9		= $1f		; temp
+!addr chip_count	= $1f		; chip count in draw chips
 !addr actual_codebank	= $20		; actual code bank
 !addr cycles		= $21		; 4 bytes cycle counter
 !addr end_high		= $25		; RAM test pages
@@ -85,7 +85,7 @@ VOLUME			= $18 *2	; volume
 !addr temp_irq		= $39		; temp irq timer tests
 !addr timer_count	= $3b		; counter timer tests
 !addr temp6		= $3d		; temp
-!addr temp7		= $3e		; temp
+!addr column		= $3e		; column draw chips
 !addr temp8		= $3f		; temp
 
 !addr start_high	= $40		; RAM test start hi
@@ -312,29 +312,29 @@ DrawChips:
 	ldx CodeBank
 	stx actual_codebank		; remember code bank
 	ldx #16
-	stx temp9			; 16 chips in a line
+	stx chip_count			; 16 chips in a line
 	txa
 	jsr mul5			; sub a x5
 	sec
-	sbc #$01
-	sta temp7			; 79 = last char of line
-drawlp2:ldy #$04			; 5 chars wide
+	sbc #1
+	sta column			; 79 = last char of line
+drawlp2:ldy #4				; 5 chars wide
 drawlp1:lda actual_codebank
 	sta IndirectBank		; set indirect bank to actual codebank
 	lda (pointer2),y		; load graphics
 	dey				; decrease and store chip char pos
 	sty temp6
-	ldy temp7			; load column
+	ldy column			; load column
 	ldx #SYSTEMBANK
 	stx IndirectBank		; systembank for screen
 	sta (pointer1),y
 	dey
-	sty temp7			; store column
+	sty column			; store column
 	ldy temp6			; load chip char pos
 	bpl drawlp1			; draw next char of chip
-	ldx temp9
+	ldx chip_count
 	dex				; next chip
-	stx temp9
+	stx chip_count
 	bne drawlp2			; draw next chip
 	rts
 ; ----------------------------------------------------------------------------
