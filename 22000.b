@@ -64,6 +64,7 @@ VOLUME			= $18 *2	; volume
 !addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
 !addr temp_checksum1	= $1d		; temp test program checksum
 !addr temp_checksum2	= $1e		; temp test program checksum
+!addr temp9		= $1f		; temp
 !addr actual_codebank	= $20		; actual code bank
 !addr cycles		= $21		; 4 bytes cycle counter
 !addr end_high		= $25		; RAM test pages
@@ -84,6 +85,9 @@ VOLUME			= $18 *2	; volume
 !addr temp_irq		= $39		; temp irq timer tests
 !addr timer_count	= $3b		; counter timer tests
 !addr temp6		= $3d		; temp
+!addr temp7		= $3e		; temp
+!addr temp8		= $3f		; temp
+
 !addr start_high	= $40		; RAM test start hi
 !addr start_low		= $41		; RAM test start lo
 !addr time2_hours	= $42		; time 1 hours
@@ -121,19 +125,19 @@ VOLUME			= $18 *2	; volume
 !addr irq_pointer	= $f4		; irq pointer
 ; ******************************************* CODE ************************************************
 *= CODESTART
-	sei
+	sei				; disable interrupts
 	cld
 	ldx #$ff
-	txs
+	txs				; iniut stack
 ; clear zero page
-	ldy #$02
+	ldy #$02			; clear zp from $02
 	lda #$00
 clrzplp:sta $0000,y
 	iny
 	bne clrzplp
 ; check if 128k or 256k machine
 	ldx #$02
-	stx last_rambank			; default 2 last_rambank
+	stx last_rambank		; default 2 last_rambank
 	inx
 	stx IndirectBank		; set bank 3 as indirect bank
 	lda #$60
@@ -148,7 +152,7 @@ chkbklp:sta (pointer1),y
 	bne chkbklp			; check next byte
 	beq drawscr			; no RAM from $6000 to $60ff
 cbm256:	lda #$04
-	sta last_rambank			; store 4 last_rambank
+	sta last_rambank		; store 4 last_rambank
 ; draw chips
 drawscr:jsr ClearScreen			; clear screen
 	ldx #0
@@ -249,20 +253,20 @@ drwiclp:ldx temp4
 	stx temp3
 	ldx #$17			; segment, execute, test
 	stx temp4
--	ldx temp4
+prseglp:ldx temp4
 	jsr PrintText			; print screen text
 	inc temp4
 	dec temp3
-	bne -
+	bne prseglp
 ; print multiple chars to screen positions from table
 	ldx #$0c			; char to print
 	stx temp1
---	lda pos_count,x			; positions to print
+multilp:lda pos_count,x			; positions to print
 	sta temp3
 	lda char,x
 	and #$3f
 	sta temp4
--	ldx temp1
+prchrlp:ldx temp1
 	lda screenposlo_lo,x		; load position table lo pointer
 	sta pointer3
 	lda screenposlo_hi,x
@@ -286,11 +290,11 @@ drwiclp:ldx temp4
 	ldx temp3
 	dex
 	stx temp3
-	bpl -				; next postion
+	bpl prchrlp			; next postion
 	ldx temp1
 	dex
 	stx temp1
-	bpl --				; next char
+	bpl multilp			; next char
 ;
 	lda last_rambank
 	cmp #$04
@@ -301,37 +305,37 @@ drwiclp:ldx temp4
 	jsr PrintText			; print screen text
 +	jmp Main
 ; ----------------------------------------------------------------------------
-; draw chip graphics to screen
+; draw one line of chip graphics to screen
 DrawChips:
-	sta pointer1
+	sta pointer1			; store screen pointer
 	sty pointer1+1
 	ldx CodeBank
 	stx actual_codebank		; remember code bank
-	ldx #$10
-	stx $1f
+	ldx #16
+	stx temp9			; 16 chips in a line
 	txa
 	jsr mul5			; sub a x5
 	sec
 	sbc #$01
-	sta $3e
-drawlp2:ldy #$04
+	sta temp7			; 79 = last char of line
+drawlp2:ldy #$04			; 5 chars wide
 drawlp1:lda actual_codebank
 	sta IndirectBank		; set indirect bank to actual codebank
-	lda (pointer2),y
-	dey
-	sty $3d
-	ldy $3e
+	lda (pointer2),y		; load graphics
+	dey				; decrease and store chip char pos
+	sty temp6
+	ldy temp7			; load column
 	ldx #SYSTEMBANK
 	stx IndirectBank		; systembank for screen
 	sta (pointer1),y
 	dey
-	sty $3e
-	ldy $3d
-	bpl drawlp1
-	ldx $1f
-	dex
-	stx $1f
-	bne drawlp2
+	sty temp7			; store column
+	ldy temp6			; load chip char pos
+	bpl drawlp1			; draw next char of chip
+	ldx temp9
+	dex				; next chip
+	stx temp9
+	bne drawlp2			; draw next chip
 	rts
 ; ----------------------------------------------------------------------------
 ; set pointer2 to chip graphics address
@@ -344,7 +348,7 @@ SetChipAddress:
 ; ----------------------------------------------------------------------------
 ; Clear screen
 ClearScreen:
-	lda #>ScreenRAM
+	lda #>ScreenRAM			; set pointer to screen RAM
 	sta pointer1+1
 	ldy #<ScreenRAM
 	sty pointer1
@@ -352,7 +356,7 @@ ClearScreen:
 	sta IndirectBank		; systembank for screen
 	lda #' '			; space
 	ldx #$08			; 8 pages
-clrsclp:sta (pointer1),y
+clrsclp:sta (pointer1),y		; clear screen
 	iny
 	bne clrsclp
 	inc pointer1+1
@@ -436,18 +440,18 @@ DummySub:
 ; ----------------------------------------------------------------------------
 ; 
 l225a:	lda IndirectBank
-	sta temp_bank
+	sta temp_bank			; remember indirect bank
 	lda #SYSTEMBANK
-	sta IndirectBank
+	sta IndirectBank		; systembank
 	ldy #$00
 	lda #$0c
-	sta ($9f),y
-	lda $3f
+	sta (crtadr),y
+	lda temp8
 	eor #$20
-	sta ($a1),y
-	sta $3f
+	sta (crtdata),y
+	sta temp8
 	lda temp_bank
-	sta IndirectBank
+	sta IndirectBank		; restore indirect bank
 	rts
 ; ----------------------------------------------------------------------------
 ; play ping sound
@@ -1104,7 +1108,8 @@ todchg:	cmp time2_10th			; compare if TOD is now = time2
 	bne todbad			; if not -> failure
 	lda (cia+TODSEC),y
 	cmp time2_seconds
-	bne todbad			; ********** CMOS ERROR: TOD seconds still 1, but time2_seconds=2 **********
+		; ********** CMOS TOD ERROR: TOD seconds still 1, but time2_seconds=2 **********
+	bne todbad
 	lda (cia+TODMIN),y
 	cmp time2_minutes
 	bne todbad
@@ -1881,7 +1886,7 @@ mul5:	clc
 ; ----------------------------------------------------------------------------
 ; init cia pointer
 InitCIAPointer:
-	lda #cia
+	lda #cia			; set cia pointer to cia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1893,7 +1898,7 @@ InitCIAPointer:
 ; ----------------------------------------------------------------------------
 ; init tpi2 pointer
 InitTPI2Pointer:
-	lda #tpi2
+	lda #tpi2			; set tpi2 pointer to tpi2
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1904,7 +1909,7 @@ InitTPI2Pointer:
 	rts
 ; ----------------------------------------------------------------------------
 ; init tpi1 pointer - UNUSED
-	lda #tpi1
+	lda #tpi1			; set tpi1 pointer to tpi1
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1916,7 +1921,7 @@ InitTPI2Pointer:
 ; ----------------------------------------------------------------------------
 ; init crt pointer
 InitCRTPointer:
-	lda #<CRT
+	lda #<CRT			; set crt pointer to crt
 	sta crtadr
 	lda #>CRT
 	sta crtadr+1
@@ -1927,7 +1932,7 @@ InitCRTPointer:
 	rts
 ; ----------------------------------------------------------------------------
 ; init acia pointer - UNUSED
-	lda #acia
+	lda #acia			; set acia pointer to acia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1951,8 +1956,8 @@ InitSIDPointer:
 ; ----------------------------------------------------------------------------
 ; init system vectors for timer test
 InitSystemVectors:
-	lda #nmi_pointer
-	sta HW_NMI
+	lda #nmi_pointer		; load system vectors
+	sta HW_NMI			; store to codebank
 	lda #$00
 	sta HW_NMI+1
 	lda #reset_pointer
@@ -1963,7 +1968,7 @@ InitSystemVectors:
 	sta HW_IRQ
 	lda #$00
 	sta HW_IRQ+1
-	lda #<InterruptHandler
+	lda #<InterruptHandler		; set pointer all to Interrrupt Routine
 	sta nmi_pointer
 	sta reset_pointer
 	sta irq_pointer
@@ -1987,7 +1992,7 @@ cpptlp:	lda (pointer3),y
 ; ----------------------------------------------------------------------------
 ; print reverse
 PrintTextReverse:
-	pha
+	pha				; save regs
 	tya
 	pha
 	txa
@@ -1995,16 +2000,16 @@ PrintTextReverse:
 	lda #$80			; reverse
 	sta temp_or_value
 	bne prnttx2			; jump always
-; print pure withour AND
+; print pure withour <or, AND
 PrintTextPure:
-	pha
+	pha				; save regs
 	tya
 	pha
 	txa
 	pha
-	lda #$00
+	lda #$00			; no or
 	sta temp_or_value
-	lda #$ff			; data and value
+	lda #$ff			; no and
 	bne prnttx1			; jump always
 ; print screen text
 PrintText:
@@ -2019,26 +2024,26 @@ prnttx2:lda #$3f			; data and value
 prnttx1	sta temp_and_value
 	lda IndirectBank		; remember indirect bank
 	sta temp_bank
-	lda scrdata_count,x
+	lda scrdata_count,x		; load length
 	tay
-	lda scrdata_lo,x
+	lda scrdata_lo,x		; load pointer to screen data pointer
 	sta screendata_pointer
 	lda scrdata_hi,x
-l2d2d:	sta screendata_pointer+1
-	lda screen_lo,x
+	sta screendata_pointer+1
+	lda screen_lo,x			; load screen position pointer
 	sta screen_pointer
 	lda screen_hi,x
 	sta screen_pointer+1
 	ldx #SYSTEMBANK
--	lda CodeBank
-	sta IndirectBank
-	lda (screendata_pointer),y
-	and temp_and_value
-	ora temp_or_value
-	stx IndirectBank
-	sta (screen_pointer),y
+prntlp	lda CodeBank
+	sta IndirectBank		; codebank
+	lda (screendata_pointer),y	; load screen data
+	and temp_and_value		; or
+	ora temp_or_value		; and
+	stx IndirectBank		; systembank
+	sta (screen_pointer),y		; write to screen
 	dey
-	bpl -
+	bpl prntlp				; next char
 	lda temp_bank
 	sta IndirectBank		; restore indirect bank
 	pla				; restore regs
