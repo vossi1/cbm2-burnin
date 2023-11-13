@@ -9,6 +9,8 @@
 !to "load 1.prg", cbm
 ; FIX_ROMCHECKSUMS = 1		; fixes ROM Checksums for non 256kB machines
 ; FIX_CIATNT = 1		; fixes TNT text in CIA if tod and timer test failed
+; ***************************************** IMPORTANT *********************************************
+CODESIZE		= $33		; Codesize to copy from bank to bank !!!
 ; ***************************************** CONSTANTS *********************************************
 CODESTART		= $2000		; code start
 CODEEND			= $3347		; code end for program checksum
@@ -55,6 +57,8 @@ VOLUME			= $18 *2	; volume
 !addr screen_pointer	= $14		; 16bit pointer screen
 !addr tod_state		= $16		; TOD state - $00=ok, $ff = bad
 !addr timer_state	= $16		; timer state - $00 = ok
+!addr bank_state	= $17 ; - $1a	; bank faulty state (max 4 banks)
+!addr bank_state_full	= $0017
 !addr cia_tod_fail	= $1b		; 0 = TOD ok, $ff = tod failed
 !addr cia_tmr_fail	= $1c		; 0 = timer ok, $ff = timer failed
 !addr temp_checksum1	= $1d		; temp test program checksum
@@ -1118,78 +1122,79 @@ Test:
 	ldx CodeBank
 	stx copy_source_bank		; source bank = actual codebank
 	dex				; decrease for bank to test
-	bne tstnxbk			; skip if testbank is >= 0
-	ldx last_rambank		; load last RAM bank if code is in bank 0
-tstnxbk:stx copy_target_bank
+	bne tstnxbk			; skip if testbank is not 0
+	ldx last_rambank		; load last RAM bank if code is in bank 1
+tstnxbk:stx copy_target_bank		; new testbank
 	stx last_codebank		; last testbank for delete * on screen
 	jsr MarkExecuteBank		; mark execute bank
 	jsr MarkTestBank		; mark test bank
 	ldx copy_target_bank
-	stx IndirectBank		; set indirect bank = target bank
+	stx IndirectBank		; set indirect bank = testbank
 	jsr RAMTest			; RAM Test - bank below code or last bank
 	ldx copy_target_bank
-	stx copy_source_bank		; source bank = last test bank
+	stx copy_source_bank		; new codebank = last testbank
 	dex				; decrease bank
-	bne tbnknt0			; skip if testbank is >= 0
-	ldx last_rambank
-tbnknt0:stx copy_target_bank		; store new target bank 
+	bne tbnknt0			; skip if testbank is not 0
+	ldx last_rambank		; load last RAM bank as new testbank
+tbnknt0:stx copy_target_bank		; store new testbank 
 	dec banks_counter		; decrease banks to test counter
-	bne tstnxbk			; test bank below
+	bne tstnxbk			; test the new testbank
+; all banks tested
 	ldx copy_source_bank
-	stx copy_target_bank		; store last bank in banks counter
+	stx copy_target_bank		; new testbank = codebank
 	jsr MarkTestBank		; mark test bank
 	ldy last_rambank
-	dey				; decrease code bank
-	sty banks_counter
+	dey				; banks to test = last bank -1
+	sty banks_counter		; counter for banks to test
 	ldx CodeBank
 	stx last_codebank		; last testbank for delete * on screen
-	stx copy_target_bank
+	stx copy_target_bank		; new testbank
 	dex
-	bne tchknbk			; skip if bank is > 0
-	ldx last_rambank		; load last RAM bank if code is in bank 0
-tchknbk:lda $16,x
-	beq l2760
-l274e:	dex
-	bne l2753
-	ldx last_rambank
-l2753:	dec banks_counter
-	bne tchknbk
+	bne tchknbk			; skip if testbank is not 0
+	ldx last_rambank		; load last RAM bank if code is in bank 1
+tchknbk:lda bank_state-1,x		; check if RAM bank is OK = $00 (-1 because banks 1-4)
+	beq tstcpcd			; jump to code copy if new bank is OK
+tscpnok:dex				; try next bank
+	bne notbk0d			; skip if new code bank is not 0
+	ldx last_rambank		; load last RAM bank if 0
+notbk0d:dec banks_counter
+	bne tchknbk			; check if next bank is OK as new code bank
 	ldx copy_target_bank
-	stx copy_source_bank
+	stx copy_source_bank		; new codebank = last testbank
 	jsr MarkTestBank		; mark test bank
-	bne l279f
-l2760:	stx temp5
+	bne tstnocb			; skip code copy if new new OK code bank found
+tstcpcd:stx temp5
 	txa
 	ldx #$00
 	ldy #$00
-	jsr SetCopyTarget
+	jsr SetCopyTarget		; set copy target = new codebank, start=$0000
 	lda CodeBank
-	jsr SetCopySource
-	ldx #$33
-	inx
-	jsr CopyMemory
-	beq l277b
+	jsr SetCopySource		; set copy source = actual codebank, start=$0000
+	ldx #CODESIZE			; code size in pages to copy
+	inx				; increase one page
+	jsr CopyMemory			; copy code to new bank
+	beq tstcpok			; branch if returns 0=ok
 	ldx temp5
-	bpl l274e
-l277b:	ldy CodeBank
+	bpl tscpnok			; try next bank if copy was not ok
+tstcpok:ldy CodeBank			; remembers old code bank in Y
 	ldx temp5
-	stx CodeBank
+	stx CodeBank			; switch to new code bank
 	nop
 	nop
 	nop
 	nop
-	sty copy_target_bank
+	sty copy_target_bank		; store old code bank as new test bank
 	ldx CodeBank
-	stx copy_source_bank
+	stx copy_source_bank		; store actual codebank
 	jsr MarkTestBank		; mark test bank
 	jsr MarkExecuteBank		; mark execute bank
 	ldx copy_target_bank
-	stx IndirectBank
-	jsr RAMTest
+	stx IndirectBank		; switch indirect bank to test bank
+	jsr RAMTest			; test previous code bank after code copy 
 	ldx copy_target_bank
-	stx copy_source_bank
+	stx copy_source_bank		; store old testbank as new codebank
 	jsr MarkTestBank		; mark test bank
-l279f:	jsr TestBank15
+tstnocb:jsr TestBank15			; test ram areas in bank 15
 	rts
 ; ----------------------------------------------------------------------------
 ; Test RAMareas in bank 15
@@ -1611,7 +1616,7 @@ l2a71:	stx IndirectBank
 	beq l2b1c
 	dey
 	lda #$ff
-	sta $0017,y
+	sta bank_state_full,y
 	tya
 	jsr mul20
 	tay
