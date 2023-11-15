@@ -14,6 +14,7 @@
 ; FIX_ROMCHECKSUMS = 1		; fixes ROM Checksums for non 256kB machines
 ; FIX_CIATNT = 1		; fixes TNT text in CIA if tod and timer test failed
 ; FIX_STATICERROR = 1		; fixes always both RAMs in bank 15 showed faulty
+; TEST = 1
 ; ***************************************** IMPORTANT *********************************************
 CODESIZE		= $33		; Codesize to copy from bank to bank !!!
 ; ***************************************** CONSTANTS *********************************************
@@ -48,6 +49,7 @@ VOLUME			= $18 *2	; volume
 ; ***************************************** ADDRESSES *********************************************
 !addr CodeBank		= $00		; code bank register
 !addr IndirectBank	= $01		; indirect bank register
+!addr MemZero		= $0000
 !addr ScreenRAM		= $d000		; Screen RAM
 !addr CRT		= $d800		; CRT
 !addr HW_NMI		= $fffa		; system NMI vector
@@ -126,7 +128,11 @@ VOLUME			= $18 *2	; volume
 !addr nmi_pointer	= $f0		; nmi pointer
 !addr reset_pointer	= $f2		; reset pointer
 !addr irq_pointer	= $f4		; irq pointer
+; stupid nonsense
+!addr zp_a0		= $a0
+!addr zp_80		= $80
 ; ******************************************* CODE ************************************************
+!zone code
 *= CODESTART
 	sei				; disable interrupts
 	cld
@@ -135,7 +141,7 @@ VOLUME			= $18 *2	; volume
 ; clear zero page
 	ldy #$02			; clear zp from $02
 	lda #$00
-clrzplp:sta $0000,y
+clrzplp:sta MemZero,y
 	iny
 	bne clrzplp
 ; check if 128k or 256k machine
@@ -550,9 +556,9 @@ ROMChecksums:
 !ifdef FIX_ROMCHECKSUMS{
 	lda #$a0			; basic hi address a000
 } else{
-	lda $a0				; ***** NO SENSE - area of IO pointer !!!
+	lda zp_a0		; ***** NO SENSE - area of IO pointer !!!
 }
-	bvc bashi			; ***** NO SENSE - branch dependent of last adc/sbc ? 
+	bvc bashi		; ***** NO SENSE - branch dependent of last adc/sbc ? 
 last_rambank4:	lda #$a0			; basic hi address a000
 bashi:	jsr prntrom			; calculate and print checksum of one rom
 	ldy #$0a
@@ -564,9 +570,9 @@ bashi:	jsr prntrom			; calculate and print checksum of one rom
 !ifdef FIX_ROMCHECKSUMS{
 	lda #$80			; basic hi address 8000
 } else{
-	lda $80				; ***** NO SENSE - area of IO pointer !!!
+	lda zp_80		; ***** NO SENSE - area of IO pointer !!!
 }
-	bvc prntrom			; ***** NO SENSE - branch dependent of last adc/sbc ? 
+	bvc prntrom		; ***** NO SENSE - branch dependent of last adc/sbc ? 
 baslo:	lda #$80			; basic low address 8000
 ; calculate and print checksum of rom
 prntrom:sty screen_pos
@@ -1112,15 +1118,33 @@ todchg:	cmp time2_10th			; compare if TOD is now = time2
 	bne todbad			; if not -> failure
 	lda (cia+TODSEC),y
 	cmp time2_seconds
-		; ********** CMOS TOD ERROR: TOD seconds still 1, but time2_seconds=2 **********
 	bne todbad
+		; ********** CMOS TOD ERROR: TOD seconds still 1, but time2_seconds=2 **********
 	lda (cia+TODMIN),y
 	cmp time2_minutes
 	bne todbad
 	lda (cia+TODHR),y
 	cmp time2_hours
 	beq todok
-todbad:	lda #$ff			; state = TOD bad
+todbad:	
+; ******************** TEST for CMOS Error ********************
+!ifdef TEST{
+	lda #<(ScreenRAM+80*23)
+	sta pointer3
+	lda #>(ScreenRAM+80*23)
+	sta pointer3+1
+testlp:	lda (cia+TODSEC),y
+	jsr Hex2Screencode		; calc screen code for a byte
+	sty temp1
+	ldy #$00
+	sta (pointer3),y		; print to screen
+	iny
+	lda temp1
+	sta (pointer3),y
+	dey
+	jmp testlp
+} 
+	lda #$ff			; state = TOD bad
 	sta tod_state
 todok:	cld				; reset decimal flag
 	rts
@@ -1890,7 +1914,7 @@ mul5:	clc
 ; ----------------------------------------------------------------------------
 ; init cia pointer
 InitCIAPointer:
-	lda #cia			; set cia pointer to cia
+	lda #<cia			; set cia pointer to cia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1902,7 +1926,7 @@ InitCIAPointer:
 ; ----------------------------------------------------------------------------
 ; init tpi2 pointer
 InitTPI2Pointer:
-	lda #tpi2			; set tpi2 pointer to tpi2
+	lda #<tpi2			; set tpi2 pointer to tpi2
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1913,7 +1937,7 @@ InitTPI2Pointer:
 	rts
 ; ----------------------------------------------------------------------------
 ; init tpi1 pointer - UNUSED
-	lda #tpi1			; set tpi1 pointer to tpi1
+	lda #<tpi1			; set tpi1 pointer to tpi1
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1936,7 +1960,7 @@ InitCRTPointer:
 	rts
 ; ----------------------------------------------------------------------------
 ; init acia pointer - UNUSED
-	lda #acia			; set acia pointer to acia
+	lda #<acia			; set acia pointer to acia
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1948,7 +1972,7 @@ InitCRTPointer:
 ; ----------------------------------------------------------------------------
 ; init sid pointer
 InitSIDPointer:
-	lda #sid
+	lda #<sid
 	sta pointer1
 	lda #$00
 	sta pointer1+1
@@ -1960,15 +1984,15 @@ InitSIDPointer:
 ; ----------------------------------------------------------------------------
 ; init system vectors for timer test
 InitSystemVectors:
-	lda #nmi_pointer		; load system vectors
+	lda #<nmi_pointer		; load system vectors
 	sta HW_NMI			; store to codebank
 	lda #$00
 	sta HW_NMI+1
-	lda #reset_pointer
+	lda #<reset_pointer
 	sta HW_RESET
 	lda #$00
 	sta HW_RESET+1
-	lda #irq_pointer
+	lda #<irq_pointer
 	sta HW_IRQ
 	lda #$00
 	sta HW_IRQ+1
@@ -2047,7 +2071,7 @@ prntlp	lda CodeBank
 	stx IndirectBank		; systembank
 	sta (screen_pointer),y		; write to screen
 	dey
-	bpl prntlp				; next char
+	bpl prntlp			; next char
 	lda temp_bank
 	sta IndirectBank		; restore indirect bank
 	pla				; restore regs
@@ -2056,9 +2080,10 @@ prntlp	lda CodeBank
 	tay
 	pla
 	rts
-; ----------------------------------------------------------------------------
+; ******************************************* DATA ************************************************
+!zone data
+;*= $2d56 ; original address
 ; screen ic-numbers/text data
-*= $2d56
 high:		!scr "HIGH"
 
 ichigh1:	!scr $5d, " 37", $5d, $5d, " 45", $5d, $5d, " 50", $5d, $5d, " 59", $5d
