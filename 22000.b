@@ -1,5 +1,5 @@
 ; CBMII b128-256 burnin 
-; disassembled by vossi 10/2023
+; disassembled by vossi 11/2023
 ;
 ; ROM Checksum routine is faulty:
 ;   with not 256kB it loads wrong ROM start addresses from ZP instead immediate E0, A0, 80 

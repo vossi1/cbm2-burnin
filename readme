@@ -1,0 +1,8 @@
+CBM2 diagnostic-test
+disassembled by Vossi 11/2023
+prepared for ACME reassembling
+
+remove semicolon for each fix:
+FIX_ROMCHECKSUMS fixes ROM Checksums for non 256kB machines
+FIX_CIATNT fixes TNT text in CIA if tod and timer test failed
+FIX_STATICERROR fixes always both RAMs in bank 15 showed faulty
